@@ -47,6 +47,7 @@ export function CourseCard({
   duration,
   moduleCount,
   logo,
+  logoClassName,
   href,
   className,
 }: {
@@ -56,6 +57,7 @@ export function CourseCard({
   duration: string;
   moduleCount: number;
   logo?: ReactNode;
+  logoClassName?: string;
   href?: string;
   className?: string;
 }) {
@@ -68,7 +70,12 @@ export function CourseCard({
   return (
     <Card className={className}>
       <div className="flex items-start gap-4">
-        <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-neutral-900 text-heading-2 font-semibold text-white">
+        <span
+          className={cn(
+            "flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-neutral-900 text-heading-2 font-semibold text-white",
+            logoClassName,
+          )}
+        >
           {logo}
         </span>
         <div className="min-w-0">
