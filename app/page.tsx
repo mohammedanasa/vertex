@@ -1,68 +1,112 @@
-import Image from "next/image";
+import Link from "next/link";
+import { ArrowRightIcon, StarIcon } from "@/components/icons";
+import { DecorativeBars } from "@/components/home/decorative-bars";
+import {
+  DockerLogo,
+  NextLogo,
+  TypeScriptLogo,
+} from "@/components/home/course-logos";
+import { HeroSearch } from "@/components/home/hero-search";
+import { SiteHeader } from "@/components/site-header";
+import { Button } from "@/components/ui/button";
+import { CourseCard } from "@/components/ui/card";
+
+const courses = [
+  {
+    title: "Next.js for Production",
+    description: "Build scalable, high-performance web applications with Next.js.",
+    level: "Intermediate",
+    duration: "18h 24m",
+    moduleCount: 12,
+    logo: <NextLogo />,
+    logoClassName: "bg-neutral-900",
+  },
+  {
+    title: "Docker Essentials",
+    description:
+      "Containerize applications and streamline your development workflow.",
+    level: "Beginner",
+    duration: "10h 12m",
+    moduleCount: 8,
+    logo: <DockerLogo />,
+    logoClassName: "bg-white border border-neutral-200",
+  },
+  {
+    title: "TypeScript Deep Dive",
+    description: "Go beyond the basics and write safer, more expressive code.",
+    level: "Intermediate",
+    duration: "14h 36m",
+    moduleCount: 10,
+    logo: <TypeScriptLogo />,
+    logoClassName: "bg-[#3178C6]",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div className="flex flex-1 flex-col">
+      <SiteHeader />
+
+      <main className="flex-1">
+        <section className="mx-auto flex max-w-3xl flex-col items-center px-6 pt-20 pb-16 text-center sm:pt-28">
+          <span className="rounded-xs border border-primary-200 bg-primary-100 px-3 py-1.5 text-small font-semibold tracking-wider text-primary-500 uppercase">
+            Intelligent Learning
+          </span>
+
+          <h1 className="mt-6 font-display text-display-2 font-bold text-neutral-900 sm:text-display-1">
+            Search your learning in plain English.
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <p className="mt-6 max-w-xl text-body-lg text-neutral-500">
+            Vertex understands what you want to learn and finds the exact
+            lessons across all your courses.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+          <Button className="mt-8">
+            Explore Courses
+            <ArrowRightIcon className="size-5" />
+          </Button>
+
+          <div className="mt-10 w-full max-w-2xl">
+            <HeroSearch />
+          </div>
+        </section>
+
+        <div className="border-t border-neutral-200" />
+
+        <section className="mx-auto max-w-6xl px-6 py-16">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <h2 className="font-display text-display-2 font-bold text-neutral-900">
+              All Courses
+            </h2>
+            <Link
+              href="/courses"
+              className="inline-flex items-center gap-2 text-body font-medium text-primary-500 hover:text-primary-600"
+            >
+              View all courses
+              <ArrowRightIcon className="size-4" />
+            </Link>
+          </div>
+
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.map((course) => (
+              <CourseCard key={course.title} {...course} />
+            ))}
+          </div>
+        </section>
+
+        <section className="px-6 pb-4">
+          <div className="mx-auto flex max-w-3xl items-center gap-4 text-neutral-300">
+            <div className="h-px flex-1 bg-neutral-200" />
+            <span className="flex items-center gap-2 text-body text-neutral-500">
+              <StarIcon className="size-4 text-primary-500" />
+              New courses and lessons added every week.
+            </span>
+            <div className="h-px flex-1 bg-neutral-200" />
+          </div>
+        </section>
+
+        <DecorativeBars />
       </main>
     </div>
   );
