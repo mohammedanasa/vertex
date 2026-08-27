@@ -1,4 +1,10 @@
-import { BellIcon, UserIcon } from "@/components/icons";
+import {
+  Show,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from "@clerk/nextjs";
+import { BellIcon } from "@/components/icons";
 import { Logo } from "@/components/ui/logo";
 import { NavLink } from "@/components/ui/nav-link";
 
@@ -22,12 +28,27 @@ export function SiteHeader() {
           >
             <BellIcon className="size-5" />
           </button>
-          <span
-            aria-hidden="true"
-            className="flex size-10 items-center justify-center rounded-full bg-neutral-200 text-neutral-500"
-          >
-            <UserIcon className="size-5" />
-          </span>
+          <Show when="signed-out">
+            <SignInButton mode="modal">
+              <button
+                type="button"
+                className="text-sm font-medium text-neutral-900 transition-colors hover:text-neutral-600"
+              >
+                Sign In
+              </button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <button
+                type="button"
+                className="flex h-10 items-center rounded-full bg-neutral-900 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-700"
+              >
+                Sign Up
+              </button>
+            </SignUpButton>
+          </Show>
+          <Show when="signed-in">
+            <UserButton />
+          </Show>
         </div>
       </div>
     </header>
