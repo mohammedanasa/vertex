@@ -20,3 +20,40 @@ export function formatCount(count: number): string {
   }
   return `${count}`;
 }
+
+/** A Portable Text block, narrowed to only what plain-text extraction needs. */
+type TextBlock = {
+  _type: string;
+  style?: string | null;
+  children?: Array<{ text?: string | null } | null> | null;
+};
+
+/**
+ * Flattens Portable Text to plain text. Used for the lesson sub-title line,
+ * which shows the lesson's opening paragraph — the schema has no separate
+ * summary field, and inventing one would mean showing content the author
+ * never wrote (AGENTS.md §7: say only what the data returns).
+ */
+export function portableTextToPlainText(
+  blocks: readonly unknown[] | null | undefined,
+  { maxBlocks }: { maxBlocks?: number } = {},
+): string {
+  if (!blocks) return "";
+
+  const textBlocks = blocks.filter(
+    (block): block is TextBlock =>
+      typeof block === "object" &&
+      block !== null &&
+      (block as TextBlock)._type === "block",
+  );
+
+  return (maxBlocks ? textBlocks.slice(0, maxBlocks) : textBlocks)
+    .map((block) =>
+      (block.children ?? [])
+        .map((child) => child?.text ?? "")
+        .join("")
+        .trim(),
+    )
+    .filter(Boolean)
+    .join(" ");
+}
