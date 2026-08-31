@@ -5,6 +5,9 @@ const dataset = process.env.SANITY_STUDIO_DATASET
 
 export default defineCliConfig({
   api: {projectId, dataset},
+  deployment: {
+    appId: 'x4a6ygq412scev34e75au6xl',
+  },
   typegen: {
     enabled: true,
     path: ['../app/**/*.{ts,tsx}', '../sanity/**/*.{ts,tsx}', '../lib/**/*.{ts,tsx}', '../components/**/*.{ts,tsx}'],

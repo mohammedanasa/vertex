@@ -332,3 +332,92 @@ export function StarIcon(props: IconProps) {
     </Outline>
   );
 }
+
+export function UsersIcon(props: IconProps) {
+  return (
+    <Outline {...props}>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
+      <path d="M15.5 6.2a3 3 0 0 1 0 5.8" />
+      <path d="M17.5 13.3a5 5 0 0 1 3 5.2" />
+    </Outline>
+  );
+}
+
+export function LayersIcon(props: IconProps) {
+  return (
+    <Outline {...props}>
+      <path d="m12 3 8 4.5-8 4.5-8-4.5L12 3Z" />
+      <path d="m4 12 8 4.5 8-4.5" />
+      <path d="m4 16.5 8 4.5 8-4.5" />
+    </Outline>
+  );
+}
+
+export function WorkflowIcon(props: IconProps) {
+  return (
+    <Outline {...props}>
+      <rect x="3.5" y="3.5" width="6" height="6" rx="1.2" />
+      <rect x="14.5" y="14.5" width="6" height="6" rx="1.2" />
+      <path d="M6.5 9.5v3a2 2 0 0 0 2 2h3" />
+      <path d="M17.5 14.5v-3a2 2 0 0 0-2-2h-3" />
+    </Outline>
+  );
+}
+
+export function GaugeIcon(props: IconProps) {
+  return (
+    <Outline {...props}>
+      <path d="M4 15a8 8 0 1 1 16 0" />
+      <path d="M12 15 16 9" />
+      <path d="M12 15h.01" />
+    </Outline>
+  );
+}
+
+export function RocketIcon(props: IconProps) {
+  return (
+    <Outline {...props}>
+      <path d="M12 3c2.5 1.5 4 4.5 4 8.5-1 .5-2.5 1-4 1s-3-.5-4-1c0-4 1.5-7 4-8.5Z" />
+      <circle cx="12" cy="10" r="1.3" />
+      <path d="M9 15.5 6.5 18l.5-3.2" />
+      <path d="M15 15.5 17.5 18l-.5-3.2" />
+      <path d="M10.5 19.5h3" />
+    </Outline>
+  );
+}
+
+export function CodeBracketIcon(props: IconProps) {
+  return (
+    <Outline {...props}>
+      <path d="m9 8-4.5 4L9 16" />
+      <path d="m15 8 4.5 4-4.5 4" />
+    </Outline>
+  );
+}
+
+export function PuzzleIcon(props: IconProps) {
+  return (
+    <Outline {...props}>
+      <path d="M9 4.5h3a1.5 1.5 0 0 1 0 3 1.5 1.5 0 0 0 0 3h3.5V14a1.5 1.5 0 0 1-3 0 1.5 1.5 0 0 0-3 0v3.5H6a1.5 1.5 0 0 1 0-3 1.5 1.5 0 0 0 0-3H4.5V8A1.5 1.5 0 0 1 6 6.5H9v-2Z" />
+    </Outline>
+  );
+}
+
+export function ShieldIcon(props: IconProps) {
+  return (
+    <Outline {...props}>
+      <path d="M12 3.5 19 6v6c0 4.5-3 7.5-7 8.5-4-1-7-4-7-8.5V6l7-2.5Z" />
+      <path d="m9 12 2 2 4-4" />
+    </Outline>
+  );
+}
+
+export function SparklesIcon(props: IconProps) {
+  return (
+    <Outline {...props}>
+      <path d="M11 4 12.3 8 16 9.3 12.3 10.6 11 14.6 9.7 10.6 6 9.3 9.7 8 11 4Z" />
+      <path d="M17.5 14.5 18.2 16.5 20 17.2 18.2 17.9 17.5 20 16.8 17.9 15 17.2 16.8 16.5 17.5 14.5Z" />
+    </Outline>
+  );
+}

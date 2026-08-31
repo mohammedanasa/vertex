@@ -1,48 +1,31 @@
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowRightIcon, StarIcon } from "@/components/icons";
-import { DecorativeBars } from "@/components/home/decorative-bars";
 import {
-  DockerLogo,
-  NextLogo,
-  TypeScriptLogo,
-} from "@/components/home/course-logos";
+  ArrowRightIcon,
+  BarChartIcon,
+  ClockIcon,
+  FolderIcon,
+  StarIcon,
+} from "@/components/icons";
+import { DecorativeBars } from "@/components/home/decorative-bars";
 import { HeroSearch } from "@/components/home/hero-search";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
-import { CourseCard } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { formatDuration } from "@/lib/format";
+import { getCourses } from "@/sanity/lib/data";
+import { urlFor } from "@/sanity/lib/image";
 
-const courses = [
-  {
-    title: "Next.js for Production",
-    description: "Build scalable, high-performance web applications with Next.js.",
-    level: "Intermediate",
-    duration: "18h 24m",
-    moduleCount: 12,
-    logo: <NextLogo />,
-    logoClassName: "bg-neutral-900",
-  },
-  {
-    title: "Docker Essentials",
-    description:
-      "Containerize applications and streamline your development workflow.",
-    level: "Beginner",
-    duration: "10h 12m",
-    moduleCount: 8,
-    logo: <DockerLogo />,
-    logoClassName: "bg-white border border-neutral-200",
-  },
-  {
-    title: "TypeScript Deep Dive",
-    description: "Go beyond the basics and write safer, more expressive code.",
-    level: "Intermediate",
-    duration: "14h 36m",
-    moduleCount: 10,
-    logo: <TypeScriptLogo />,
-    logoClassName: "bg-[#3178C6]",
-  },
-];
+const LEVEL_LABELS: Record<string, string> = {
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+};
 
-export default function Home() {
+export default async function Home() {
+  const allCourses = await getCourses();
+  const courses = allCourses.slice(0, 3);
+
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
@@ -90,7 +73,47 @@ export default function Home() {
 
           <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {courses.map((course) => (
-              <CourseCard key={course.title} {...course} />
+              <Card key={course._id}>
+                <div className="flex items-start gap-4">
+                  <span className="relative size-12 shrink-0 overflow-hidden rounded-sm bg-neutral-900">
+                    {course.coverImage ? (
+                      <Image
+                        src={urlFor(course.coverImage).width(96).height(96).url()}
+                        alt={course.title ?? ""}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : null}
+                  </span>
+                  <div className="min-w-0">
+                    <Link
+                      href={`/courses/${course.slug}`}
+                      className="hover:text-primary-500"
+                    >
+                      <h3 className="font-display text-heading-3 font-bold text-neutral-900">
+                        {course.title}
+                      </h3>
+                    </Link>
+                    <p className="mt-1 text-body text-neutral-500">
+                      {course.summary}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-neutral-200 pt-4">
+                  <span className="inline-flex items-center gap-1.5 text-small text-neutral-500">
+                    <BarChartIcon className="size-3.5" />
+                    {course.level ? LEVEL_LABELS[course.level] : null}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-small text-neutral-500">
+                    <ClockIcon className="size-3.5" />
+                    {formatDuration(course.totalDuration ?? 0)}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-small text-neutral-500">
+                    <FolderIcon className="size-3.5" />
+                    {course.moduleCount ?? 0} modules
+                  </span>
+                </div>
+              </Card>
             ))}
           </div>
         </section>

@@ -40,17 +40,17 @@ export const lesson = defineType({
           .error('Must be a valid URL starting with http:// or https://'),
     }),
     defineField({
-      name: 'poster',
-      title: 'Poster / Thumbnail',
+      name: 'thumbnail',
+      title: 'Thumbnail',
       type: 'image',
       options: {hotspot: true},
       validation: (rule) => rule.required(),
     }),
     defineField({
       name: 'duration',
-      type: 'string',
-      description: 'Display duration, e.g. "12m".',
-      validation: (rule) => rule.required(),
+      type: 'number',
+      description: 'Duration in seconds.',
+      validation: (rule) => rule.required().min(0),
     }),
     defineField({
       name: 'freePreview',
@@ -125,6 +125,6 @@ export const lesson = defineType({
     }),
   ],
   preview: {
-    select: {title: 'title', subtitle: 'duration', media: 'poster'},
+    select: {title: 'title', subtitle: 'duration', media: 'thumbnail'},
   },
 })
