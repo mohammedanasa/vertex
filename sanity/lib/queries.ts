@@ -65,10 +65,21 @@ export const LESSON_BY_SLUG_QUERY = defineQuery(`
       _id,
       title,
       "slug": slug.current,
+      summary,
+      coverImage,
+      level,
       modules[]{
         _key,
         title,
-        lessons[]->{ _id, title, "slug": slug.current, duration },
+        summary,
+        lessons[]->{
+          _id,
+          title,
+          "slug": slug.current,
+          duration,
+          freePreview,
+          thumbnail,
+        },
       },
     },
   }
@@ -101,4 +112,65 @@ export const CATEGORIES_QUERY = defineQuery(`
     "slug": slug.current,
     description,
   }
+`)
+
+/**
+ * Re-fetches the lessons a search returned, by id.
+ *
+ * This is the grounding step: the language model supplies only ids, and every
+ * value the search page renders comes from here (AGENTS.md §11). An id the
+ * model invented matches no document and simply drops out of the results.
+ *
+ * `moduleTitles` and `moduleLessonSlugs` are returned so the caller can derive
+ * the "Lesson 5.1" label from array position. GROQ exposes module order but not
+ * an index, and having the model count positions is exactly how fabricated
+ * lesson numbers appear — so the arithmetic happens in TypeScript instead,
+ * using the same rule as `getLessonBySlug`.
+ */
+export const SEARCH_HYDRATE_QUERY = defineQuery(`
+  *[_type == "lesson" && _id in $ids]{
+    _id,
+    title,
+    "slug": slug.current,
+    duration,
+    thumbnail,
+    keyPoints,
+    "notesText": pt::text(notes),
+    "course": *[_type == "course" && references(^._id)][0]{
+      title,
+      "slug": slug.current,
+      coverImage,
+      "moduleTitles": modules[].title,
+      "moduleTitle": modules[lessons[]._ref match ^.^._id][0].title,
+      "moduleLessonSlugs": modules[lessons[]._ref match ^.^._id][0].lessons[]->slug.current,
+    },
+  }
+`)
+
+/**
+ * Finds lessons matching a set of keyword stems.
+ *
+ * The stems come from the model; the query itself is fixed here. That keeps the
+ * model out of GROQ authoring entirely — it cannot emit a malformed query, and
+ * `$stems` is a bound parameter, so its text can never alter the query.
+ *
+ * `match` semantics matter: a *parameterized array* is AND (every term must
+ * match), while an inline array literal is OR. Verified against the dataset —
+ * `title match $stems` with four stems returned 1 lesson, while the OR form
+ * below returned 40. So the OR is written explicitly, by counting how many
+ * stems each field matches and keeping any lesson with at least one hit.
+ *
+ * The per-field hit counts double as the ranking signal: a stem in the title is
+ * more specific than one buried in the notes (AGENTS.md §11).
+ */
+export const LESSON_SEARCH_QUERY = defineQuery(`
+  *[_type == "lesson" && count($stems[
+    ^.title match @ || pt::text(^.notes) match @ || ^.keyPoints[] match @
+  ]) > 0]{
+    _id,
+    title,
+    "titleHits": count($stems[^.title match @]),
+    "keyPointHits": count($stems[^.keyPoints[] match @]),
+    "notesHits": count($stems[pt::text(^.notes) match @]),
+  } | order(titleHits desc, keyPointHits desc, notesHits desc)[0...$limit]
 `)

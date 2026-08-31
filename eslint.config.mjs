@@ -15,6 +15,9 @@ const eslintConfig = defineConfig([
     // Vendored skill reference material, not application source.
     "agent/**",
     ".agents/**",
+    // The Studio is its own workspace with its own tooling. Its built bundles
+    // in studio/dist are large enough to exhaust the linter's heap.
+    "studio/**",
   ]),
 ]);
 
