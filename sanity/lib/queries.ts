@@ -10,6 +10,8 @@ const courseCardProjection = /* groq */ `{
   price,
   popular,
   studentCount,
+  "moduleCount": count(modules),
+  "totalDuration": math::sum(modules[].lessons[]->duration),
   "instructor": instructor->{ name, "slug": slug.current, photo },
   "category": category->{ title, "slug": slug.current },
 }`
@@ -36,7 +38,7 @@ export const COURSE_BY_SLUG_QUERY = defineQuery(`
       _key,
       title,
       summary,
-      lessons[]->{ _id, title, "slug": slug.current, duration, freePreview, poster },
+      lessons[]->{ _id, title, "slug": slug.current, duration, freePreview, thumbnail },
     },
   }
 `)
@@ -51,7 +53,7 @@ export const LESSON_BY_SLUG_QUERY = defineQuery(`
     title,
     "slug": slug.current,
     videoUrl,
-    poster,
+    thumbnail,
     duration,
     freePreview,
     studentCount,

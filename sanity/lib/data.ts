@@ -12,18 +12,31 @@ import {
   LESSON_SLUGS_QUERY,
 } from './queries'
 
+/**
+ * The dataset is private (AGENTS.md section 12), and `sanityFetch` (from
+ * `defineLive`) only attaches `serverToken` when `perspective` is explicitly
+ * non-'published' (see next-sanity's live/conditions/next-js implementation).
+ * Every call here passes `perspective: 'drafts'` so the token is actually
+ * sent — this dataset has no draft documents, so the query still resolves to
+ * published content, it just now authenticates the request.
+ */
 export async function getCourses() {
-  const { data } = await sanityFetch({ query: COURSES_QUERY })
+  const { data } = await sanityFetch({ query: COURSES_QUERY, perspective: 'drafts', stega: false })
   return data
 }
 
 export async function getCourseBySlug(slug: string) {
-  const { data } = await sanityFetch({ query: COURSE_BY_SLUG_QUERY, params: { slug } })
+  const { data } = await sanityFetch({
+    query: COURSE_BY_SLUG_QUERY,
+    params: { slug },
+    perspective: 'drafts',
+    stega: false,
+  })
   return data
 }
 
 export async function getCourseSlugs() {
-  const { data } = await sanityFetch({ query: COURSE_SLUGS_QUERY, perspective: 'published', stega: false })
+  const { data } = await sanityFetch({ query: COURSE_SLUGS_QUERY, perspective: 'drafts', stega: false })
   return data
 }
 
@@ -33,7 +46,12 @@ export async function getCourseSlugs() {
  * course's module array order, not from stored numbering.
  */
 export async function getLessonBySlug(slug: string) {
-  const { data: lesson } = await sanityFetch({ query: LESSON_BY_SLUG_QUERY, params: { slug } })
+  const { data: lesson } = await sanityFetch({
+    query: LESSON_BY_SLUG_QUERY,
+    params: { slug },
+    perspective: 'drafts',
+    stega: false,
+  })
   if (!lesson) return null
 
   const { course, ...rest } = lesson
@@ -70,21 +88,26 @@ export async function getLessonBySlug(slug: string) {
 }
 
 export async function getLessonSlugs() {
-  const { data } = await sanityFetch({ query: LESSON_SLUGS_QUERY, perspective: 'published', stega: false })
+  const { data } = await sanityFetch({ query: LESSON_SLUGS_QUERY, perspective: 'drafts', stega: false })
   return data
 }
 
 export async function getInstructorBySlug(slug: string) {
-  const { data } = await sanityFetch({ query: INSTRUCTOR_BY_SLUG_QUERY, params: { slug } })
+  const { data } = await sanityFetch({
+    query: INSTRUCTOR_BY_SLUG_QUERY,
+    params: { slug },
+    perspective: 'drafts',
+    stega: false,
+  })
   return data
 }
 
 export async function getInstructorSlugs() {
-  const { data } = await sanityFetch({ query: INSTRUCTOR_SLUGS_QUERY, perspective: 'published', stega: false })
+  const { data } = await sanityFetch({ query: INSTRUCTOR_SLUGS_QUERY, perspective: 'drafts', stega: false })
   return data
 }
 
 export async function getCategories() {
-  const { data } = await sanityFetch({ query: CATEGORIES_QUERY })
+  const { data } = await sanityFetch({ query: CATEGORIES_QUERY, perspective: 'drafts', stega: false })
   return data
 }
