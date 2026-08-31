@@ -421,3 +421,13 @@ export function SparklesIcon(props: IconProps) {
     </Outline>
   );
 }
+
+export function LightbulbIcon(props: IconProps) {
+  return (
+    <Outline {...props}>
+      <path d="M9 18h6" />
+      <path d="M10 21h4" />
+      <path d="M12 3a6 6 0 0 0-3.6 10.8c.6.45.95 1.15.95 1.9V16h5.3v-.3c0-.75.35-1.45.95-1.9A6 6 0 0 0 12 3Z" />
+    </Outline>
+  );
+}
