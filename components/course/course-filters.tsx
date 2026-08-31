@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
 import { Select } from "@/components/ui/select";
 
 export interface CourseFilterCategory {
@@ -22,6 +23,7 @@ export function CourseFilters({
   const router = useRouter();
 
   function updateParam(key: "category" | "sort", value: string) {
+    posthog.capture("course_filter_applied", { filter_type: key, filter_value: value });
     const params = new URLSearchParams();
     if (key === "category" ? value : category) {
       params.set("category", key === "category" ? value : (category ?? ""));

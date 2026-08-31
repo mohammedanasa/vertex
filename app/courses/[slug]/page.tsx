@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BarChartIcon, BookmarkIcon, ClockIcon, FolderIcon, UsersIcon } from "@/components/icons";
+import { BarChartIcon, ClockIcon, FolderIcon, UsersIcon } from "@/components/icons";
+import { CourseCTAButtons } from "@/components/course/course-cta-buttons";
 import { CourseProgressBar } from "@/components/course/course-progress-bar";
+import { CourseViewTracker } from "@/components/course/course-view-tracker";
 import { ModuleList } from "@/components/course/module-list";
 import { OutcomeGrid } from "@/components/course/outcome-grid";
 import { SiteHeader } from "@/components/site-header";
@@ -133,21 +134,11 @@ export default async function CoursePage({
                 </span>
               </div>
 
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Link
-                  href={firstLessonSlug ? `/lessons/${firstLessonSlug}` : "#"}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary-500 px-4 text-body-lg font-medium text-white shadow-sm hover:bg-primary-600"
-                >
-                  Continue Learning
-                </Link>
-                <button
-                  type="button"
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-neutral-200 bg-surface px-4 text-body-lg font-medium text-neutral-900 hover:shadow-md"
-                >
-                  <BookmarkIcon className="size-5" />
-                  Bookmark
-                </button>
-              </div>
+              <CourseCTAButtons
+                continueHref={firstLessonSlug ? `/lessons/${firstLessonSlug}` : "#"}
+                courseSlug={slug}
+                courseTitle={course.title ?? null}
+              />
             </div>
           </div>
 
@@ -175,6 +166,11 @@ export default async function CoursePage({
 
       <CourseProgressBar
         continueHref={firstLessonSlug ? `/lessons/${firstLessonSlug}` : "#"}
+      />
+      <CourseViewTracker
+        courseSlug={slug}
+        courseTitle={course.title ?? null}
+        courseLevel={course.level ?? null}
       />
     </div>
   );
