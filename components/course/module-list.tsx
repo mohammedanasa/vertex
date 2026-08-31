@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import posthog from "posthog-js";
 import { ChevronDownIcon, LockIcon, PlayCircleIcon } from "@/components/icons";
 import { formatDuration } from "@/lib/format";
 
@@ -48,9 +49,17 @@ export function ModuleList({ modules }: { modules: ModuleListItem[] }) {
               <div className="flex-1 border-b border-neutral-200 pb-6 last:border-b-0">
                 <button
                   type="button"
-                  onClick={() =>
-                    setOpenModuleKey((key) => (key === mod._key ? null : mod._key))
-                  }
+                  onClick={() => {
+                    const isOpening = openModuleKey !== mod._key;
+                    setOpenModuleKey((key) => (key === mod._key ? null : mod._key));
+                    if (isOpening) {
+                      posthog.capture("module_expanded", {
+                        module_title: mod.title,
+                        module_index: index + 1,
+                        lesson_count: mod.lessons.length,
+                      });
+                    }
+                  }}
                   aria-expanded={isOpen}
                   className="flex w-full items-start justify-between gap-4 text-left"
                 >
@@ -77,6 +86,14 @@ export function ModuleList({ modules }: { modules: ModuleListItem[] }) {
                         <Link
                           href={lesson.slug ? `/lessons/${lesson.slug}` : "#"}
                           className="flex items-center justify-between gap-4 rounded-md px-3 py-2 text-body text-neutral-700 hover:bg-neutral-100"
+                          onClick={() =>
+                            posthog.capture("lesson_clicked", {
+                              lesson_slug: lesson.slug,
+                              lesson_duration_seconds: lesson.duration,
+                              free_preview: lesson.freePreview ?? false,
+                              module_title: mod.title,
+                            })
+                          }
                         >
                           <span className="flex min-w-0 items-center gap-2">
                             {lesson.freePreview ? (
@@ -104,7 +121,14 @@ export function ModuleList({ modules }: { modules: ModuleListItem[] }) {
         <div className="mt-6 flex justify-center">
           <button
             type="button"
-            onClick={() => setExpanded((v) => !v)}
+            onClick={() => {
+              const nextExpanded = !expanded;
+              setExpanded(nextExpanded);
+              posthog.capture("module_list_show_all_clicked", {
+                action: nextExpanded ? "show_all" : "show_fewer",
+                total_modules: modules.length,
+              });
+            }}
             className="inline-flex h-11 items-center gap-2 rounded-md border border-neutral-200 bg-surface px-4 text-body font-medium text-neutral-900 hover:shadow-md"
           >
             {expanded
