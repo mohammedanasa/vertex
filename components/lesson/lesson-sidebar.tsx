@@ -35,15 +35,11 @@ interface LessonSidebarProps {
   courseImageUrl: string | null;
   modules: SidebarModule[];
   currentModuleNumber: number | null;
+  /** Real stored progress for this course, resolved server-side. */
+  percentComplete: number;
+  /** Lesson ids this learner has finished, for the per-lesson check marks. */
+  completedLessonIds: string[];
 }
-
-/**
- * Progress is presentational only for now (AGENTS.md §7): there is no progress
- * document, no Clerk-keyed server route, and nothing here writes. The percent
- * and the completed check marks are placeholders shown exactly as the course
- * page's sticky bar already shows them.
- */
-const PLACEHOLDER_PROGRESS = 35;
 
 export function LessonSidebar({
   courseTitle,
@@ -51,10 +47,13 @@ export function LessonSidebar({
   courseImageUrl,
   modules,
   currentModuleNumber,
+  percentComplete,
+  completedLessonIds,
 }: LessonSidebarProps) {
   const [openModule, setOpenModule] = useState<number | null>(
     currentModuleNumber,
   );
+  const completed = new Set(completedLessonIds);
 
   return (
     <div className="flex flex-col">
@@ -86,12 +85,12 @@ export function LessonSidebar({
               {courseTitle}
             </p>
             <ProgressBar
-              value={PLACEHOLDER_PROGRESS}
+              value={percentComplete}
               showLabel={false}
               className="mt-2"
             />
             <p className="mt-1.5 text-small text-neutral-500">
-              {PLACEHOLDER_PROGRESS}% complete
+              {percentComplete}% complete
             </p>
           </div>
         </div>
@@ -107,9 +106,11 @@ export function LessonSidebar({
         {modules.map((mod) => {
           const isOpen = openModule === mod.number;
           const isCurrent = mod.number === currentModuleNumber;
-          // Placeholder completion: everything before the current module.
+          // A module is complete when every lesson in it is — real stored
+          // completion, not the module's position in the course.
           const isComplete =
-            currentModuleNumber !== null && mod.number < currentModuleNumber;
+            mod.lessons.length > 0 &&
+            mod.lessons.every((lesson) => completed.has(lesson._id));
 
           return (
             <li
@@ -168,14 +169,18 @@ export function LessonSidebar({
                         aria-current={lesson.isCurrent ? "page" : undefined}
                         className="flex items-start gap-3 py-2 pr-6 pl-[3.25rem] hover:bg-neutral-100"
                       >
-                        <span
-                          className={cn(
-                            "mt-1.5 size-2 shrink-0 rounded-full",
-                            lesson.isCurrent
-                              ? "bg-primary-500"
-                              : "border border-neutral-300",
-                          )}
-                        />
+                        {completed.has(lesson._id) ? (
+                          <CheckCircleIcon className="mt-0.5 size-4 shrink-0 text-success-500" />
+                        ) : (
+                          <span
+                            className={cn(
+                              "mt-1.5 size-2 shrink-0 rounded-full",
+                              lesson.isCurrent
+                                ? "bg-primary-500"
+                                : "border border-neutral-300",
+                            )}
+                          />
+                        )}
                         <span className="min-w-0 flex-1">
                           <span
                             className={cn(

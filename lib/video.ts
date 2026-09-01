@@ -45,6 +45,12 @@ export function parseYouTubeId(videoUrl: string | null | undefined): string | nu
 /**
  * Builds the privacy-mode embed URL, seeking with YouTube's own `start`
  * parameter rather than a custom player.
+ *
+ * This is the **fallback** path, used when the IFrame Player API cannot load.
+ * The normal path builds the player through `lib/youtube-player.ts` so the page
+ * can read real playback position. A plain iframe gives no such signal, so
+ * tracking degrades to a wall-clock estimate — but the video still plays, which
+ * is what matters.
  */
 export function buildYouTubeEmbedUrl(
   videoId: string,
@@ -55,6 +61,26 @@ export function buildYouTubeEmbedUrl(
   if (autoplay) params.set("autoplay", "1");
 
   return `https://www.youtube-nocookie.com/embed/${videoId}?${params.toString()}`;
+}
+
+/**
+ * Player vars for the IFrame API path.
+ *
+ * `origin` is a security setting, not a nicety: it tells the player which
+ * parent to accept postMessage from, so an arbitrary frame cannot drive it.
+ */
+export function youTubePlayerVars(
+  { startSeconds = 0, origin }: { startSeconds?: number; origin?: string } = {},
+): Record<string, string | number> {
+  const vars: Record<string, string | number> = {
+    rel: 0,
+    modestbranding: 1,
+    playsinline: 1,
+    enablejsapi: 1,
+  };
+  if (startSeconds > 0) vars.start = Math.floor(startSeconds);
+  if (origin) vars.origin = origin;
+  return vars;
 }
 
 /**

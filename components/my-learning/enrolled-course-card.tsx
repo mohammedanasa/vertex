@@ -8,6 +8,7 @@ import {
   FolderIcon,
 } from "@/components/icons";
 import { CourseResumeLink } from "@/components/course/course-resume-link";
+import { CourseActionsMenu } from "@/components/my-learning/course-actions-menu";
 import { BookmarkButton } from "@/components/ui/bookmark-button";
 import { Card } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -23,6 +24,8 @@ const LEVEL_LABELS: Record<string, string> = {
 };
 
 export interface EnrolledCourseCardProps {
+  /** Sanity document id — what the progress actions write against. */
+  courseId: string;
   slug: string;
   title: string | null;
   summary: string | null;
@@ -43,6 +46,7 @@ export interface EnrolledCourseCardProps {
  * the resume to PostHog.
  */
 export function EnrolledCourseCard({
+  courseId,
   slug,
   title,
   summary,
@@ -76,7 +80,14 @@ export function EnrolledCourseCard({
           </Link>
           <p className="mt-1 line-clamp-2 text-body text-neutral-500">{summary}</p>
         </div>
-        <BookmarkButton kind="course" slug={slug} className="size-9" />
+        <div className="flex shrink-0 items-center gap-1">
+          <BookmarkButton kind="course" slug={slug} className="size-9" />
+          <CourseActionsMenu
+            courseId={courseId}
+            courseSlug={slug}
+            courseTitle={title}
+          />
+        </div>
       </div>
 
       <div className="mt-5 flex flex-col gap-3">

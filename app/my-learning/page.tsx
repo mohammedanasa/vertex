@@ -9,7 +9,7 @@ import { MyLearningFilters } from "@/components/my-learning/my-learning-filters"
 import { MyLearningViewTracker } from "@/components/my-learning/my-learning-view-tracker";
 import { SiteHeader } from "@/components/site-header";
 import { Container } from "@/components/ui/container";
-import { getCourseProgress } from "@/lib/progress";
+import { courseProgress, getProgressForUser } from "@/lib/progress";
 import { getCourses } from "@/sanity/lib/data";
 
 export const metadata: Metadata = {
@@ -127,23 +127,33 @@ export default async function MyLearningPage({
     );
   }
 
-  const courses = await getCourses();
+  // The whole progress record in one fetch, then each course derived from it —
+  // a per-course fetch would issue one query per card.
+  const [courses, progress] = await Promise.all([
+    getCourses(),
+    getProgressForUser(userId),
+  ]);
 
-  // A course joins My Learning once it has been started. Progress is resolved
-  // once per course here, then handed to the card as data.
+  // A course joins My Learning once it has been started and has not been
+  // removed; `courseProgress` decides both.
   const started = courses.flatMap((course) => {
-    const progress = getCourseProgress(
-      userId,
-      course._id,
-      course.lessonCount ?? 0,
+    const lessonIds = (course.lessonIds ?? []).filter((id): id is string =>
+      Boolean(id),
     );
-    if (!progress.hasStarted) return [];
+    const state = courseProgress(progress, course._id, lessonIds);
+    if (!state.isEnrolled) return [];
 
+    // Resume at the first lesson the learner has not finished; if they have
+    // finished them all, fall back to the first so Review Course still works.
+    const lessons = (course.lessonSlugs ?? []).flatMap((slug, index) =>
+      slug ? [{ slug, id: lessonIds[index] }] : [],
+    );
     const resumeSlug =
-      (course.lessonSlugs ?? []).find((slug): slug is string => Boolean(slug)) ??
+      lessons.find((l) => l.id && !progress.completedLessons.has(l.id))?.slug ??
+      lessons[0]?.slug ??
       null;
 
-    return [{ course, progress, resumeSlug }];
+    return [{ course, progress: state, resumeSlug }];
   });
 
   const visible = started.filter(({ progress }) =>
@@ -202,6 +212,7 @@ export default async function MyLearningPage({
               {visible.map(({ course, progress, resumeSlug }) => (
                 <EnrolledCourseCard
                   key={course._id}
+                  courseId={course._id}
                   slug={course.slug ?? ""}
                   title={course.title}
                   summary={course.summary}

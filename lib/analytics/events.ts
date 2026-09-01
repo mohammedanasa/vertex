@@ -43,6 +43,10 @@ export const ANALYTICS_EVENTS = {
 
   /** A lesson was watched far enough to count as finished. */
   LESSON_COMPLETED: "lesson_completed",
+  /** The end-of-lesson overlay moved the learner to the next lesson. */
+  LESSON_AUTO_ADVANCED: "lesson_auto_advanced",
+  /** The learner stopped the auto-advance countdown. Measures annoyance. */
+  LESSON_AUTO_ADVANCE_CANCELLED: "lesson_auto_advance_cancelled",
   /** Previous/Next used to move through a course. */
   LESSON_NAVIGATED: "lesson_navigated",
 
@@ -51,6 +55,12 @@ export const ANALYTICS_EVENTS = {
 
   /** The My Learning page rendered. */
   MY_LEARNING_VIEWED: "my_learning_viewed",
+  /** A learner joined a course, putting it on My Learning. */
+  COURSE_ENROLLED: "course_enrolled",
+  /** A learner hid a course from My Learning. Completion data is kept. */
+  COURSE_REMOVED_FROM_LEARNING: "course_removed_from_learning",
+  /** A learner wiped their progress in a course. Destructive. */
+  COURSE_PROGRESS_RESET: "course_progress_reset",
 
   /**
    * A course or lesson was bookmarked. Presentational only (AGENTS.md §7):
@@ -80,10 +90,24 @@ export type ResumeSource =
   | "my_learning_card";
 
 /**
- * Watch-depth milestones, in percent of the lesson's authored duration.
+ * How a learner came to be enrolled.
  *
- * 90 rather than 100 because trailing credits and outros mean a learner who has
- * genuinely finished a lesson rarely reaches the last few seconds.
+ * Kept as a property rather than two event names so total enrollments stay one
+ * number, while the Enroll button's real conversion is still separable from
+ * people who merely opened a lesson.
+ */
+export type EnrollSource = "course_cta" | "lesson_opened";
+
+/** Whether the countdown expired on its own or the learner skipped ahead. */
+export type AutoAdvanceTrigger = "countdown_expired" | "play_now_clicked";
+
+/**
+ * Watch-depth milestones, in percent of the video's real duration.
+ *
+ * Read from the YouTube IFrame Player API's actual playback position, so these
+ * are measurements rather than the wall-clock estimates they used to be. The
+ * `is_estimate` / `approx_*` properties that flagged the old guesswork are gone
+ * with it — see `components/lesson/lesson-video.tsx`.
  */
 export const WATCH_DEPTH_MILESTONES = [25, 50, 75, 90] as const;
 

@@ -1,9 +1,12 @@
 import 'server-only'
 
+import { client } from './client'
+import { token } from './env'
 import { sanityFetch } from './live'
 import {
   CATEGORIES_QUERY,
   COURSE_BY_SLUG_QUERY,
+  COURSE_LESSON_IDS_QUERY,
   COURSE_SLUGS_QUERY,
   COURSES_QUERY,
   INSTRUCTOR_BY_SLUG_QUERY,
@@ -11,6 +14,7 @@ import {
   LESSON_BY_SLUG_QUERY,
   LESSON_SEARCH_QUERY,
   LESSON_SLUGS_QUERY,
+  PROGRESS_BY_USER_QUERY,
   SEARCH_HYDRATE_QUERY,
   VIDEO_MOMENTS_QUERY,
 } from './queries'
@@ -209,4 +213,36 @@ export async function getVideoMoments(
     stega: false,
   })
   return data
+}
+
+/**
+ * Fetches one learner's progress record, or null if they have none yet.
+ *
+ * Deliberately **not** routed through `sanityFetch`. That path is built for
+ * cacheable catalog content; progress is per-user state that changes as a
+ * direct result of the learner's own action, and serving a cached copy would
+ * show a course still present right after they removed it. This uses the raw
+ * client with the read token, `useCdn: false`, and no caching.
+ *
+ * `userId` is bound as a GROQ parameter, never interpolated.
+ */
+export async function getProgressRecord(userId: string) {
+  return client
+    .withConfig({ useCdn: false, token, perspective: 'published' })
+    .fetch(PROGRESS_BY_USER_QUERY, { userId }, { cache: 'no-store' })
+}
+
+/**
+ * The lesson ids belonging to one course.
+ *
+ * Used by the reset action to scope a wipe to that course's lessons, resolved
+ * server-side so a client cannot supply the list and wipe lessons it does not
+ * own.
+ */
+export async function getCourseLessonIds(courseId: string): Promise<string[]> {
+  const result = await client
+    .withConfig({ useCdn: false, token, perspective: 'published' })
+    .fetch(COURSE_LESSON_IDS_QUERY, { courseId }, { cache: 'no-store' })
+
+  return (result?.lessonIds ?? []).filter((id): id is string => Boolean(id))
 }
