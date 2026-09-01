@@ -4,6 +4,7 @@ import { client } from './client'
 import { token } from './env'
 import { sanityFetch } from './live'
 import {
+  BOOKMARKED_ITEMS_QUERY,
   CATEGORIES_QUERY,
   COURSE_BY_SLUG_QUERY,
   COURSE_LESSON_IDS_QUERY,
@@ -245,4 +246,32 @@ export async function getCourseLessonIds(courseId: string): Promise<string[]> {
     .fetch(COURSE_LESSON_IDS_QUERY, { courseId }, { cache: 'no-store' })
 
   return (result?.lessonIds ?? []).filter((id): id is string => Boolean(id))
+}
+
+/**
+ * Resolves a learner's bookmarked ids into the cards the Saved page renders.
+ *
+ * Like `getProgressRecord`, this is per-learner state and is not routed through
+ * `sanityFetch`: a cached copy would show an item the learner just removed.
+ *
+ * Ids are bound as GROQ parameters, never interpolated. Empty input short
+ * circuits so the common "nothing saved yet" case costs no round trip.
+ */
+export async function getBookmarkedItems(
+  courseIds: readonly string[],
+  lessonIds: readonly string[],
+) {
+  if (courseIds.length === 0 && lessonIds.length === 0) {
+    return { courses: [], lessons: [] }
+  }
+
+  const data = await client
+    .withConfig({ useCdn: false, token, perspective: 'published' })
+    .fetch(
+      BOOKMARKED_ITEMS_QUERY,
+      { courseIds: [...courseIds], lessonIds: [...lessonIds] },
+      { cache: 'no-store' },
+    )
+
+  return { courses: data?.courses ?? [], lessons: data?.lessons ?? [] }
 }

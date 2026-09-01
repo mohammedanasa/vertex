@@ -5,14 +5,16 @@ import { getCourseLessonIds, getProgressRecord } from "@/sanity/lib/data";
 import { getWriteClient } from "@/sanity/lib/write-client";
 
 /**
- * The one route that writes learner progress (AGENTS.md §5: any write goes
- * through a server route with a write token; the browser never writes).
+ * The one route that writes learner state — progress and bookmarks (AGENTS.md
+ * §5: any write goes through a server route with a write token; the browser
+ * never writes).
  *
  * The actions share a route so the auth check, the write client, and the
  * validation live in one place rather than being repeated for each.
  *
  * NOTE: enrollment is not entitlement. Being enrolled puts a course on My
- * Learning; it grants access to nothing. Free preview remains a label, not
+ * Learning; it grants access to nothing. Bookmarking grants even less — it does
+ * not enroll and does not reach My Learning. Free preview remains a label, not
  * access control (§7). Do not grow this into an authorization check.
  *
  * SECURITY: the learner is taken from `auth()` on the server and the request
@@ -47,8 +49,27 @@ const ACTIONS = [
   "complete-lesson",
   "remove-course",
   "reset-course",
+  "toggle-bookmark",
 ] as const;
 type Action = (typeof ACTIONS)[number];
+
+/**
+ * Actions that operate on a course and therefore require a valid `courseId`.
+ *
+ * `toggle-bookmark` is the one action that may target a lesson instead, so the
+ * check is per-action rather than blanket. Every pre-existing action stays in
+ * this list: relaxing the rule must not weaken what they already guarantee.
+ */
+const COURSE_ACTIONS: ReadonlySet<Action> = new Set([
+  "enroll-course",
+  "save-position",
+  "complete-lesson",
+  "remove-course",
+  "reset-course",
+]);
+
+const BOOKMARK_KINDS = ["course", "lesson"] as const;
+type BookmarkKind = (typeof BOOKMARK_KINDS)[number];
 
 /** How many times a lost read-modify-write race is retried before giving up. */
 const MAX_ATTEMPTS = 3;
@@ -56,6 +77,13 @@ const MAX_ATTEMPTS = 3;
 function isAction(value: unknown): value is Action {
   return (
     typeof value === "string" && (ACTIONS as readonly string[]).includes(value)
+  );
+}
+
+function isBookmarkKind(value: unknown): value is BookmarkKind {
+  return (
+    typeof value === "string" &&
+    (BOOKMARK_KINDS as readonly string[]).includes(value)
   );
 }
 
@@ -90,6 +118,8 @@ interface ProgressState {
   lastPositions: { lessonId: string; seconds: number }[];
   enrolledCourses: string[];
   removedCourses: string[];
+  bookmarkedCourses: string[];
+  bookmarkedLessons: string[];
 }
 
 /** Normalizes a fetched record into plain arrays, tolerating missing fields. */
@@ -106,6 +136,8 @@ function toState(record: Awaited<ReturnType<typeof getProgressRecord>>) {
     ),
     enrolledCourses: strings(record?.enrolledCourses),
     removedCourses: strings(record?.removedCourses),
+    bookmarkedCourses: strings(record?.bookmarkedCourses),
+    bookmarkedLessons: strings(record?.bookmarkedLessons),
   } satisfies ProgressState;
 }
 
@@ -122,11 +154,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const { action, courseId, lessonId, seconds } = (body ?? {}) as {
+  const { action, courseId, lessonId, seconds, kind } = (body ?? {}) as {
     action?: unknown;
     courseId?: unknown;
     lessonId?: unknown;
     seconds?: unknown;
+    kind?: unknown;
   };
 
   if (!isAction(action)) {
@@ -135,7 +168,7 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  if (!isDocumentId(courseId)) {
+  if (COURSE_ACTIONS.has(action) && !isDocumentId(courseId)) {
     return NextResponse.json(
       { error: "A valid 'courseId' is required." },
       { status: 400 },
@@ -150,6 +183,32 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+  if (action === "toggle-bookmark") {
+    // `kind` selects which array is written. It is checked against a literal
+    // union and then used only through a fixed if/else below — never to index
+    // into the document, which would let a caller name an arbitrary field.
+    if (!isBookmarkKind(kind)) {
+      return NextResponse.json(
+        { error: "'kind' must be 'course' or 'lesson'." },
+        { status: 400 },
+      );
+    }
+    if (!isDocumentId(kind === "course" ? courseId : lessonId)) {
+      return NextResponse.json(
+        {
+          error: `A valid '${kind === "course" ? "courseId" : "lessonId"}' is required.`,
+        },
+        { status: 400 },
+      );
+    }
+  }
+
+  // Validation above has already rejected anything invalid for this action.
+  // Binding narrowed locals here keeps the branches below honest about types
+  // without re-checking, and makes it explicit that a course action always has
+  // a courseId while toggle-bookmark may not.
+  const course = isDocumentId(courseId) ? courseId : null;
+  const lesson = isDocumentId(lessonId) ? lessonId : null;
 
   const client = getWriteClient();
 
@@ -158,6 +217,9 @@ export async function POST(request: Request) {
       const record = await getProgressRecord(userId);
       const state = toState(record);
       let next: ProgressState;
+      // Set only by toggle-bookmark, and returned so the client can settle its
+      // optimistic state without a refetch.
+      let bookmarked: boolean | undefined;
 
       if (action === "enroll-course") {
         // Enrolling also un-hides: a learner who removed a course and then
@@ -165,17 +227,17 @@ export async function POST(request: Request) {
         // hidden would look broken. Idempotent — enrolling twice is one entry.
         next = {
           ...state,
-          enrolledCourses: withValue(state.enrolledCourses, courseId),
+          enrolledCourses: withValue(state.enrolledCourses, course!),
           removedCourses: withoutValues(
             state.removedCourses,
-            new Set([courseId]),
+            new Set([course!]),
           ),
         };
       } else if (action === "save-position") {
         // Checkpoints where the learner is, without claiming they finished.
         // Distinct from complete-lesson on purpose: pausing or navigating away
         // records a resume point, it does not mark the lesson done.
-        const id = lessonId as string;
+        const id = lesson!;
         const at =
           typeof seconds === "number" && Number.isFinite(seconds) && seconds >= 0
             ? Math.floor(seconds)
@@ -195,27 +257,47 @@ export async function POST(request: Request) {
             { lessonId: id, seconds: at },
           ],
           // Watching a lesson is enrolling in its course.
-          enrolledCourses: withValue(state.enrolledCourses, courseId),
+          enrolledCourses: withValue(state.enrolledCourses, course!),
         };
       } else if (action === "complete-lesson") {
-        const id = lessonId as string;
+        const id = lesson!;
         const positions = state.lastPositions.filter((p) => p.lessonId !== id);
         if (typeof seconds === "number" && Number.isFinite(seconds) && seconds >= 0) {
           positions.push({ lessonId: id, seconds: Math.floor(seconds) });
         }
 
         next = {
+          ...state,
           completedLessons: withValue(state.completedLessons, id),
           lastPositions: positions,
-          enrolledCourses: withValue(state.enrolledCourses, courseId),
-          removedCourses: state.removedCourses,
+          enrolledCourses: withValue(state.enrolledCourses, course!),
         };
+      } else if (action === "toggle-bookmark") {
+        // Bookmarking is orthogonal to enrollment on purpose: saving a course
+        // for later must not start it, list it on My Learning, or grant access
+        // to anything. Note the contrast with save-position above, which does
+        // enroll. Nothing here touches enrolledCourses or removedCourses.
+        const id = kind === "course" ? course! : lesson!;
+        const list =
+          kind === "course" ? state.bookmarkedCourses : state.bookmarkedLessons;
+
+        // Toggle, so the same request twice is a no-op pair rather than a
+        // corruption. withoutValues also collapses any pre-existing duplicates.
+        bookmarked = !list.includes(id);
+        const updated = bookmarked
+          ? withValue(list, id)
+          : withoutValues(list, new Set([id]));
+
+        next =
+          kind === "course"
+            ? { ...state, bookmarkedCourses: updated }
+            : { ...state, bookmarkedLessons: updated };
       } else if (action === "remove-course") {
         // Hides the course. Completion data is deliberately kept, so reopening
         // the course restores the learner's history.
         next = {
           ...state,
-          removedCourses: withValue(state.removedCourses, courseId),
+          removedCourses: withValue(state.removedCourses, course!),
         };
       } else {
         // reset-course: wipe this course's completions and positions, keep it
@@ -223,26 +305,27 @@ export async function POST(request: Request) {
         //
         // The lesson list is resolved server-side from the course; a
         // client-supplied list could name lessons in other courses.
-        const courseLessons = new Set(await getCourseLessonIds(courseId));
+        const courseLessons = new Set(await getCourseLessonIds(course!));
 
         next = {
+          ...state,
           completedLessons: withoutValues(state.completedLessons, courseLessons),
           lastPositions: state.lastPositions.filter(
             (p) => !courseLessons.has(p.lessonId),
           ),
           // Reset means "start this course over", not "forget I opened it" —
           // the enrolledCourses entry stays so the card remains at 0%.
-          enrolledCourses: withValue(state.enrolledCourses, courseId),
+          enrolledCourses: withValue(state.enrolledCourses, course!),
           removedCourses: withoutValues(
             state.removedCourses,
-            new Set([courseId]),
+            new Set([course!]),
           ),
         };
       }
 
       if (!record?._id) {
         await client.create({ _type: "progress", userId, ...next });
-        return NextResponse.json({ ok: true });
+        return NextResponse.json({ ok: true, bookmarked });
       }
 
       try {
@@ -251,7 +334,7 @@ export async function POST(request: Request) {
           .ifRevisionId(record._rev)
           .set(next)
           .commit({ autoGenerateArrayKeys: true });
-        return NextResponse.json({ ok: true });
+        return NextResponse.json({ ok: true, bookmarked });
       } catch (error) {
         // 409 means someone else wrote between our read and our write. Re-read
         // and recompute rather than overwriting their change.

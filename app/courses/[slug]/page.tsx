@@ -140,7 +140,13 @@ export default async function CoursePage({
                 <h1 className="min-w-0 font-display text-display-2 font-bold text-neutral-900">
                   {course.title}
                 </h1>
-                <BookmarkButton kind="course" slug={slug} />
+                <BookmarkButton
+                  kind="course"
+                  id={course._id}
+                  slug={slug}
+                  initialBookmarked={learner?.bookmarkedCourses.has(course._id)}
+                  isSignedIn={Boolean(userId)}
+                />
               </div>
 
               <p className="mt-4 text-body-lg text-neutral-500">{course.summary}</p>

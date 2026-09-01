@@ -31,6 +31,13 @@ export function SiteHeader() {
             >
               My Learning
             </NavLink>
+            {/* Saved holds nothing but per-learner state, so it is offered only
+                once there is an account for it to belong to. */}
+            <Show when="signed-in">
+              <NavLink href="/saved" active={pathname.startsWith("/saved")}>
+                Saved
+              </NavLink>
+            </Show>
           </nav>
         </div>
         <div className="flex items-center gap-4">

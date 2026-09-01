@@ -37,6 +37,10 @@ export interface EnrolledCourseCardProps {
   progress: CourseProgress;
   /** Where Continue/Review goes — the course's first lesson. */
   resumeSlug: string | null;
+  /** Whether this course is in the learner's Saved list. */
+  isBookmarked?: boolean;
+  /** My Learning is signed-in only, but the button needs it stated. */
+  isSignedIn?: boolean;
 }
 
 /**
@@ -56,6 +60,8 @@ export function EnrolledCourseCard({
   totalDuration,
   progress,
   resumeSlug,
+  isBookmarked,
+  isSignedIn,
 }: EnrolledCourseCardProps) {
   const { completedLessons, totalLessons, percentComplete, isComplete } = progress;
 
@@ -81,7 +87,14 @@ export function EnrolledCourseCard({
           <p className="mt-1 line-clamp-2 text-body text-neutral-500">{summary}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <BookmarkButton kind="course" slug={slug} className="size-9" />
+          <BookmarkButton
+            kind="course"
+            id={courseId}
+            slug={slug}
+            initialBookmarked={isBookmarked}
+            isSignedIn={isSignedIn}
+            className="size-9"
+          />
           <CourseActionsMenu
             courseId={courseId}
             courseSlug={slug}

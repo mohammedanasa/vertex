@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SignInButton } from "@clerk/nextjs";
 import posthog from "posthog-js";
-import { BookmarkIcon } from "@/components/icons";
 import { ANALYTICS_EVENTS } from "@/lib/analytics/events";
 
 interface CourseCTAButtonsProps {
@@ -43,6 +42,11 @@ const PRIMARY =
  * Signed-out visitors still get the full page — course pages are public
  * (AGENTS.md §7) — but the button opens Clerk's sign-in rather than posting a
  * write that would 401.
+ *
+ * This row used to carry its own inline Bookmark button that stored nothing and
+ * fired a hardcoded event string. Bookmarks are persisted now, and the page
+ * header renders the real `BookmarkButton` beside the title — two controls for
+ * one bookmark, one of them fake, would contradict each other on screen.
  */
 export function CourseCTAButtons({
   continueHref,
@@ -126,20 +130,6 @@ export function CourseCTAButtons({
           {busy ? "Enrolling…" : "Enroll"}
         </button>
       )}
-
-      <button
-        type="button"
-        className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-neutral-200 bg-surface px-4 text-body-lg font-medium text-neutral-900 hover:shadow-md"
-        onClick={() =>
-          posthog.capture("course_bookmarked", {
-            course_slug: courseSlug,
-            course_title: courseTitle,
-          })
-        }
-      >
-        <BookmarkIcon className="size-5" />
-        Bookmark
-      </button>
 
       {failed ? (
         <p className="w-full text-body text-primary-600">

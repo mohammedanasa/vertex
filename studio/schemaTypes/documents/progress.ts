@@ -2,7 +2,12 @@ import {ActivityIcon} from '@sanity/icons'
 import {defineArrayMember, defineField, defineType} from 'sanity'
 
 /**
- * A learner's progress, keyed by their Clerk user id (AGENTS.md §8).
+ * A learner's state, keyed by their Clerk user id (AGENTS.md §8).
+ *
+ * Named `progress` because that is what it originally held. It now also holds
+ * bookmarks, which are not progress. The two live together deliberately: a page
+ * that renders many cards needs every per-learner value at once, and one
+ * document means one fetch instead of one query per card.
  *
  * This is app state, not authored content. It is written only by the server
  * route at `app/api/progress/route.ts` using the write token — the browser
@@ -93,6 +98,22 @@ export const progress = defineType({
       description:
         'Course ids the learner hid from My Learning. Hiding only — completion ' +
         'data is deliberately preserved, so reopening the course restores it.',
+      of: [defineArrayMember({type: 'string'})],
+    }),
+    defineField({
+      name: 'bookmarkedCourses',
+      title: 'Bookmarked Courses',
+      type: 'array',
+      description:
+        'Course ids the learner saved. Independent of enrollment: bookmarking ' +
+        'does not start a course, list it on My Learning, or grant any access.',
+      of: [defineArrayMember({type: 'string'})],
+    }),
+    defineField({
+      name: 'bookmarkedLessons',
+      title: 'Bookmarked Lessons',
+      type: 'array',
+      description: 'Lesson ids the learner saved.',
       of: [defineArrayMember({type: 'string'})],
     }),
   ],
