@@ -25,7 +25,7 @@ export function LessonNav({
 }) {
   return (
     <div className="sticky bottom-0 border-t border-neutral-200 bg-surface shadow-lg">
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-6 py-4">
+      <div className="flex items-center justify-between gap-4 px-6 py-4 lg:px-8">
         <div className="flex min-w-0 items-center gap-4">
           {previous?.slug ? (
             <LessonNavLink

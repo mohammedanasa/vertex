@@ -8,6 +8,7 @@ import { EnrolledCourseCard } from "@/components/my-learning/enrolled-course-car
 import { MyLearningFilters } from "@/components/my-learning/my-learning-filters";
 import { MyLearningViewTracker } from "@/components/my-learning/my-learning-view-tracker";
 import { SiteHeader } from "@/components/site-header";
+import { Container } from "@/components/ui/container";
 import { getCourseProgress } from "@/lib/progress";
 import { getCourses } from "@/sanity/lib/data";
 
@@ -32,7 +33,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="flex flex-1 flex-col">
       <SiteHeader />
       <main className="flex-1">
-        <div className="mx-auto w-full max-w-6xl px-6 py-12">{children}</div>
+        <Container className="py-12">{children}</Container>
       </main>
     </div>
   );

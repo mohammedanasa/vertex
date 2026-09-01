@@ -18,6 +18,7 @@ import { LessonViewTracker } from "@/components/lesson/lesson-view-tracker";
 import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { Container } from "@/components/ui/container";
 import {
   formatCount,
   formatDuration,
@@ -88,7 +89,7 @@ export default async function LessonPage({
     <div className="flex flex-1 flex-col">
       <SiteHeader />
 
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col lg:flex-row">
+      <Container className="flex flex-1 flex-col px-0 lg:flex-row">
         {course ? (
           <aside className="border-b border-neutral-200 bg-surface lg:sticky lg:top-0 lg:h-screen lg:w-80 lg:shrink-0 lg:overflow-y-auto lg:border-r lg:border-b-0">
             <LessonSidebar
@@ -102,7 +103,7 @@ export default async function LessonPage({
         ) : null}
 
         <main className="min-w-0 flex-1">
-          <div className="px-6 py-8 lg:px-10">
+          <div className="px-6 py-8 lg:px-8">
             <Breadcrumbs
               items={[
                 { label: "All Courses", href: "/courses" },
@@ -247,7 +248,7 @@ export default async function LessonPage({
             courseSlug={course?.slug ?? null}
           />
         </main>
-      </div>
+      </Container>
 
       <LessonViewTracker
         lessonSlug={slug}

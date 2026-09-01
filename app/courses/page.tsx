@@ -4,6 +4,7 @@ import { BarChartIcon, ClockIcon, FolderIcon } from "@/components/icons";
 import { CourseFilters } from "@/components/course/course-filters";
 import { SiteHeader } from "@/components/site-header";
 import { Card } from "@/components/ui/card";
+import { Container } from "@/components/ui/container";
 import { Pagination } from "@/components/ui/pagination";
 import { formatDuration } from "@/lib/format";
 import { getCategories, getCourses } from "@/sanity/lib/data";
@@ -67,7 +68,7 @@ export default async function CoursesPage({
       <SiteHeader />
 
       <main className="flex-1">
-        <div className="mx-auto w-full max-w-6xl px-6 py-12">
+        <Container className="py-12">
           <h1 className="font-display text-display-2 font-bold text-neutral-900">
             All Courses
           </h1>
@@ -142,7 +143,7 @@ export default async function CoursesPage({
               }
             />
           ) : null}
-        </div>
+        </Container>
       </main>
     </div>
   );

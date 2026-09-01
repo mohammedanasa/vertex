@@ -8,6 +8,7 @@ import {
 } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
 import { BellIcon } from "@/components/icons";
+import { Container } from "@/components/ui/container";
 import { Logo } from "@/components/ui/logo";
 import { NavLink } from "@/components/ui/nav-link";
 
@@ -17,7 +18,7 @@ export function SiteHeader() {
 
   return (
     <header className="border-b border-neutral-200">
-      <div className="mx-auto flex h-20 w-full max-w-6xl items-center justify-between gap-4 px-6">
+      <Container className="flex h-20 items-center justify-between gap-4">
         <div className="flex items-center gap-10">
           <Logo />
           <nav className="hidden items-center gap-8 sm:flex">
@@ -62,7 +63,7 @@ export function SiteHeader() {
             <UserButton />
           </Show>
         </div>
-      </div>
+      </Container>
     </header>
   );
 }
