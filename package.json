@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typegen": "cd studio && npm run typegen"
+    "typegen": "cd studio && npm run typegen",
+    "ingest:videos": "node scripts/ingest-videos.mjs"
   },
   "dependencies": {
     "@ai-sdk/groq": "^4.0.35",
