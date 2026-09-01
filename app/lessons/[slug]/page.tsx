@@ -163,7 +163,12 @@ export default async function LessonPage({
                 ) : null}
               </div>
 
-              <LessonBookmarkButton lessonSlug={slug} />
+              <LessonBookmarkButton
+                lessonId={lesson._id}
+                lessonSlug={slug}
+                initialBookmarked={learner?.bookmarkedLessons.has(lesson._id)}
+                isSignedIn={Boolean(userId)}
+              />
             </div>
 
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-body text-neutral-500">

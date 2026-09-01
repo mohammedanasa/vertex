@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 import { BarChartIcon, ClockIcon, FolderIcon } from "@/components/icons";
 import { CourseFilters } from "@/components/course/course-filters";
 import { SiteHeader } from "@/components/site-header";
@@ -8,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { Pagination } from "@/components/ui/pagination";
 import { formatDuration } from "@/lib/format";
+import { getProgressForUser } from "@/lib/progress";
 import { getCategories, getCourses } from "@/sanity/lib/data";
 import { urlFor } from "@/sanity/lib/image";
 
@@ -36,6 +38,10 @@ export default async function CoursesPage({
   searchParams,
 }: PageProps<"/courses">) {
   const { category, sort, page: pageParam } = await searchParams;
+
+  // One fetch for the whole page, per lib/progress.ts — never one per card.
+  const { userId } = await auth();
+  const progress = userId ? await getProgressForUser(userId) : null;
 
   const categorySlug = typeof category === "string" ? category : undefined;
   const sortOrder = sort === "title" ? "title" : "recent";
@@ -116,7 +122,12 @@ export default async function CoursesPage({
                     </div>
                     <BookmarkButton
                       kind="course"
+                      id={course._id}
                       slug={course.slug ?? ""}
+                      initialBookmarked={progress?.bookmarkedCourses.has(
+                        course._id,
+                      )}
+                      isSignedIn={Boolean(userId)}
                       className="size-9"
                     />
                   </div>

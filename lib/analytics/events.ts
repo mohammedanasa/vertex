@@ -63,13 +63,19 @@ export const ANALYTICS_EVENTS = {
   COURSE_PROGRESS_RESET: "course_progress_reset",
 
   /**
-   * A course or lesson was bookmarked. Presentational only (AGENTS.md §7):
-   * nothing is stored, so these events are the only record that a learner
-   * wanted to save something — which is exactly the signal worth having before
-   * building the backend for it.
+   * A course or lesson was saved or unsaved.
+   *
+   * Bookmarks are now persisted per learner, so unlike the earlier
+   * presentational button the removal edge is a real, deliberate action and
+   * gets its own event rather than being dropped as noise.
+   *
+   * All four fire only after the write succeeds, so a failed toggle is never
+   * counted as a save.
    */
   COURSE_BOOKMARKED: "course_bookmarked",
   LESSON_BOOKMARKED: "lesson_bookmarked",
+  COURSE_UNBOOKMARKED: "course_unbookmarked",
+  LESSON_UNBOOKMARKED: "lesson_unbookmarked",
 } as const;
 
 export type AnalyticsEvent =

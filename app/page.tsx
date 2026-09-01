@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 import {
   ArrowRightIcon,
   BarChartIcon,
@@ -15,6 +16,7 @@ import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatDuration } from "@/lib/format";
+import { getProgressForUser } from "@/lib/progress";
 import { getCourses } from "@/sanity/lib/data";
 import { urlFor } from "@/sanity/lib/image";
 
@@ -27,6 +29,10 @@ const LEVEL_LABELS: Record<string, string> = {
 export default async function Home() {
   const allCourses = await getCourses();
   const courses = allCourses.slice(0, 3);
+
+  // One fetch for the whole page, per lib/progress.ts — never one per card.
+  const { userId } = await auth();
+  const progress = userId ? await getProgressForUser(userId) : null;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -102,7 +108,10 @@ export default async function Home() {
                   </div>
                   <BookmarkButton
                     kind="course"
+                    id={course._id}
                     slug={course.slug ?? ""}
+                    initialBookmarked={progress?.bookmarkedCourses.has(course._id)}
+                    isSignedIn={Boolean(userId)}
                     className="size-9"
                   />
                 </div>

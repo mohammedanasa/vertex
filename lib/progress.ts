@@ -3,7 +3,7 @@ import "server-only";
 import { getProgressRecord } from "@/sanity/lib/data";
 
 /**
- * Learner progress (AGENTS.md §7, §8).
+ * Learner progress and bookmarks (AGENTS.md §7, §8).
  *
  * Reads the learner's `progress` document — app state keyed by the Clerk user
  * id, kept apart from the read-only catalog content the pages render. Writes go
@@ -42,12 +42,21 @@ export interface CourseProgress {
   isEnrolled: boolean;
 }
 
-/** A learner's whole progress record, normalized so callers need no null checks. */
+/** A learner's whole record, normalized so callers need no null checks. */
 export interface LearnerProgress {
   completedLessons: ReadonlySet<string>;
   lastPositions: ReadonlyMap<string, number>;
   enrolledCourses: ReadonlySet<string>;
   removedCourses: ReadonlySet<string>;
+  /**
+   * Saved courses and lessons.
+   *
+   * Deliberately independent of enrollment: a bookmarked course is not started,
+   * does not appear on My Learning, and carries no access. Do not fold these
+   * into `isEnrolled`.
+   */
+  bookmarkedCourses: ReadonlySet<string>;
+  bookmarkedLessons: ReadonlySet<string>;
 }
 
 const EMPTY: LearnerProgress = {
@@ -55,6 +64,8 @@ const EMPTY: LearnerProgress = {
   lastPositions: new Map(),
   enrolledCourses: new Set(),
   removedCourses: new Set(),
+  bookmarkedCourses: new Set(),
+  bookmarkedLessons: new Set(),
 };
 
 /** Drops nulls from an optional string array and returns it as a set. */
@@ -87,6 +98,8 @@ export async function getProgressForUser(
     lastPositions,
     enrolledCourses: toSet(record.enrolledCourses),
     removedCourses: toSet(record.removedCourses),
+    bookmarkedCourses: toSet(record.bookmarkedCourses),
+    bookmarkedLessons: toSet(record.bookmarkedLessons),
   };
 }
 

@@ -62,6 +62,8 @@ export type Progress = {
   }>;
   enrolledCourses?: Array<string>;
   removedCourses?: Array<string>;
+  bookmarkedCourses?: Array<string>;
+  bookmarkedLessons?: Array<string>;
 };
 
 export type Video = {
@@ -671,7 +673,7 @@ export type VIDEO_MOMENTS_QUERY_RESULT = Array<{
 
 // Source: ../sanity/lib/queries.ts
 // Variable: PROGRESS_BY_USER_QUERY
-// Query: *[_type == "progress" && userId == $userId] | order(_createdAt asc)[0]{    _id,    _rev,    userId,    completedLessons,    lastPositions[]{ lessonId, seconds },    enrolledCourses,    removedCourses,  }
+// Query: *[_type == "progress" && userId == $userId] | order(_createdAt asc)[0]{    _id,    _rev,    userId,    completedLessons,    lastPositions[]{ lessonId, seconds },    enrolledCourses,    removedCourses,    bookmarkedCourses,    bookmarkedLessons,  }
 export type PROGRESS_BY_USER_QUERY_RESULT = {
   _id: string;
   _rev: string;
@@ -683,6 +685,8 @@ export type PROGRESS_BY_USER_QUERY_RESULT = {
   }> | null;
   enrolledCourses: Array<string> | null;
   removedCourses: Array<string> | null;
+  bookmarkedCourses: Array<string> | null;
+  bookmarkedLessons: Array<string> | null;
 } | null;
 
 // Source: ../sanity/lib/queries.ts
@@ -691,6 +695,47 @@ export type PROGRESS_BY_USER_QUERY_RESULT = {
 export type COURSE_LESSON_IDS_QUERY_RESULT = {
   lessonIds: Array<string | null> | null;
 } | null;
+
+// Source: ../sanity/lib/queries.ts
+// Variable: BOOKMARKED_ITEMS_QUERY
+// Query: {    "courses": *[_type == "course" && _id in $courseIds]{      _id,      title,      "slug": slug.current,      summary,      coverImage,      level,      "moduleCount": count(modules),      "lessonCount": count(modules[].lessons[]),      "totalDuration": math::sum(modules[].lessons[]->duration),    },    "lessons": *[_type == "lesson" && _id in $lessonIds]{      _id,      title,      "slug": slug.current,      thumbnail,      duration,      keyPoints,      "course": *[_type == "course" && references(^._id)][0]{        title,        "slug": slug.current,      },    },  }
+export type BOOKMARKED_ITEMS_QUERY_RESULT = {
+  courses: Array<{
+    _id: string;
+    title: string | null;
+    slug: string | null;
+    summary: string | null;
+    coverImage: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    } | null;
+    level: "advanced" | "beginner" | "intermediate" | null;
+    moduleCount: number | null;
+    lessonCount: number | null;
+    totalDuration: number | null;
+  }>;
+  lessons: Array<{
+    _id: string;
+    title: string | null;
+    slug: string | null;
+    thumbnail: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    } | null;
+    duration: number | null;
+    keyPoints: Array<string> | null;
+    course: {
+      title: string | null;
+      slug: string | null;
+    } | null;
+  }>;
+};
 
 // Query TypeMap
 import "@sanity/client";
@@ -707,8 +752,9 @@ declare module "@sanity/client" {
     "\n  *[_type == \"lesson\" && _id in $ids]{\n    _id,\n    title,\n    \"slug\": slug.current,\n    duration,\n    thumbnail,\n    keyPoints,\n    \"notesText\": pt::text(notes),\n    \"course\": *[_type == \"course\" && references(^._id)][0]{\n      title,\n      \"slug\": slug.current,\n      coverImage,\n      \"moduleTitles\": modules[].title,\n      \"moduleTitle\": modules[lessons[]._ref match ^.^._id][0].title,\n      \"moduleLessonSlugs\": modules[lessons[]._ref match ^.^._id][0].lessons[]->slug.current,\n    },\n  }\n": SEARCH_HYDRATE_QUERY_RESULT;
     "\n  *[_type == \"lesson\" && count($stems[\n    ^.title match @ || pt::text(^.notes) match @ || ^.keyPoints[] match @\n  ]) > 0]{\n    _id,\n    title,\n    \"titleHits\": count($stems[^.title match @]),\n    \"keyPointHits\": count($stems[^.keyPoints[] match @]),\n    \"notesHits\": count($stems[pt::text(^.notes) match @]),\n  } | order(titleHits desc, keyPointHits desc, notesHits desc)[0...$limit]\n": LESSON_SEARCH_QUERY_RESULT;
     "\n  *[_type == \"lesson\" && _id in $ids && defined(videoUrl)]{\n    _id,\n    \"video\": *[_type == \"video\" && url == ^.videoUrl][0]{\n      \"chapterMoments\": chapters[count($stems[^.label match @]) > 0][0...$perVideo]{\n        startSeconds,\n        label,\n      },\n      \"chunkMoments\": chunks[count($stems[^.text match @]) > 0][0...$perVideo]{\n        startSeconds,\n        text,\n      },\n    },\n  }[defined(video)]\n": VIDEO_MOMENTS_QUERY_RESULT;
-    "\n  *[_type == \"progress\" && userId == $userId] | order(_createdAt asc)[0]{\n    _id,\n    _rev,\n    userId,\n    completedLessons,\n    lastPositions[]{ lessonId, seconds },\n    enrolledCourses,\n    removedCourses,\n  }\n": PROGRESS_BY_USER_QUERY_RESULT;
+    "\n  *[_type == \"progress\" && userId == $userId] | order(_createdAt asc)[0]{\n    _id,\n    _rev,\n    userId,\n    completedLessons,\n    lastPositions[]{ lessonId, seconds },\n    enrolledCourses,\n    removedCourses,\n    bookmarkedCourses,\n    bookmarkedLessons,\n  }\n": PROGRESS_BY_USER_QUERY_RESULT;
     "\n  *[_type == \"course\" && _id == $courseId][0]{\n    \"lessonIds\": modules[].lessons[]->_id,\n  }\n": COURSE_LESSON_IDS_QUERY_RESULT;
+    "\n  {\n    \"courses\": *[_type == \"course\" && _id in $courseIds]{\n      _id,\n      title,\n      \"slug\": slug.current,\n      summary,\n      coverImage,\n      level,\n      \"moduleCount\": count(modules),\n      \"lessonCount\": count(modules[].lessons[]),\n      \"totalDuration\": math::sum(modules[].lessons[]->duration),\n    },\n    \"lessons\": *[_type == \"lesson\" && _id in $lessonIds]{\n      _id,\n      title,\n      \"slug\": slug.current,\n      thumbnail,\n      duration,\n      keyPoints,\n      \"course\": *[_type == \"course\" && references(^._id)][0]{\n        title,\n        \"slug\": slug.current,\n      },\n    },\n  }\n": BOOKMARKED_ITEMS_QUERY_RESULT;
   }
 }
 

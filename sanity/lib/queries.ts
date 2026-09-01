@@ -240,6 +240,8 @@ export const PROGRESS_BY_USER_QUERY = defineQuery(`
     lastPositions[]{ lessonId, seconds },
     enrolledCourses,
     removedCourses,
+    bookmarkedCourses,
+    bookmarkedLessons,
   }
 `)
 
@@ -250,5 +252,45 @@ export const PROGRESS_BY_USER_QUERY = defineQuery(`
 export const COURSE_LESSON_IDS_QUERY = defineQuery(`
   *[_type == "course" && _id == $courseId][0]{
     "lessonIds": modules[].lessons[]->_id,
+  }
+`)
+
+/**
+ * The courses and lessons a learner bookmarked, resolved from stored ids.
+ *
+ * Ids are passed in from the already-fetched progress record rather than joined
+ * in GROQ, because the record is read once per request anyway (see
+ * `lib/progress.ts`) and a join here would re-read it.
+ *
+ * A bookmarked document that was later deleted or unpublished simply does not
+ * come back — the page renders what still exists rather than erroring on a
+ * dangling id. Lessons carry their parent course via a reverse reference, since
+ * a lesson does not store its course (AGENTS.md §8).
+ */
+export const BOOKMARKED_ITEMS_QUERY = defineQuery(`
+  {
+    "courses": *[_type == "course" && _id in $courseIds]{
+      _id,
+      title,
+      "slug": slug.current,
+      summary,
+      coverImage,
+      level,
+      "moduleCount": count(modules),
+      "lessonCount": count(modules[].lessons[]),
+      "totalDuration": math::sum(modules[].lessons[]->duration),
+    },
+    "lessons": *[_type == "lesson" && _id in $lessonIds]{
+      _id,
+      title,
+      "slug": slug.current,
+      thumbnail,
+      duration,
+      keyPoints,
+      "course": *[_type == "course" && references(^._id)][0]{
+        title,
+        "slug": slug.current,
+      },
+    },
   }
 `)

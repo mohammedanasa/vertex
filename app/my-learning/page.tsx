@@ -153,7 +153,16 @@ export default async function MyLearningPage({
       lessons[0]?.slug ??
       null;
 
-    return [{ course, progress: state, resumeSlug }];
+    return [
+      {
+        course,
+        progress: state,
+        resumeSlug,
+        // Resolved here because the outer `progress` record is shadowed by the
+        // per-course state inside the render map below.
+        isBookmarked: progress.bookmarkedCourses.has(course._id),
+      },
+    ];
   });
 
   const visible = started.filter(({ progress }) =>
@@ -209,7 +218,7 @@ export default async function MyLearningPage({
             />
           ) : (
             <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {visible.map(({ course, progress, resumeSlug }) => (
+              {visible.map(({ course, progress, resumeSlug, isBookmarked }) => (
                 <EnrolledCourseCard
                   key={course._id}
                   courseId={course._id}
@@ -222,6 +231,8 @@ export default async function MyLearningPage({
                   totalDuration={course.totalDuration ?? 0}
                   progress={progress}
                   resumeSlug={resumeSlug}
+                  isBookmarked={isBookmarked}
+                  isSignedIn
                 />
               ))}
             </div>
