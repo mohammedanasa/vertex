@@ -47,13 +47,14 @@ export type LessonResult = BaseResult & {
 /**
  * A lesson's video matched at a specific moment.
  *
- * Dormant until the video ingestion pipeline exists: there is no `video`
- * document type in the schema and zero video documents in the dataset, so
- * nothing can currently produce one of these (AGENTS.md §8/§9). The shape is
- * defined now so that adding ingestion is additive.
+ * Built by `hydrateResults` from the `video` document that shares the lesson's
+ * `videoUrl`: a matching chapter label if there is one, otherwise a matching
+ * transcript chunk (AGENTS.md §7).
  *
  * A video result is always tied to the lesson that uses the video, and a video
- * document is never surfaced on its own (AGENTS.md §7).
+ * document is never surfaced on its own (§7). `startSeconds` always comes from
+ * a stored `startSeconds` on that document — the model never supplies it, so a
+ * timestamp cannot be invented.
  */
 export type VideoResult = BaseResult & {
   kind: "video";
