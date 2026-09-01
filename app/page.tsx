@@ -10,6 +10,7 @@ import {
 import { DecorativeBars } from "@/components/home/decorative-bars";
 import { HeroSearch } from "@/components/home/hero-search";
 import { SiteHeader } from "@/components/site-header";
+import { BookmarkButton } from "@/components/ui/bookmark-button";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -86,7 +87,7 @@ export default async function Home() {
                       />
                     ) : null}
                   </span>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <Link
                       href={`/courses/${course.slug}`}
                       className="hover:text-primary-500"
@@ -99,6 +100,11 @@ export default async function Home() {
                       {course.summary}
                     </p>
                   </div>
+                  <BookmarkButton
+                    kind="course"
+                    slug={course.slug ?? ""}
+                    className="size-9"
+                  />
                 </div>
                 <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-neutral-200 pt-4">
                   <span className="inline-flex items-center gap-1.5 text-small text-neutral-500">

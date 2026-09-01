@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BarChartIcon, ClockIcon, FolderIcon } from "@/components/icons";
 import { CourseFilters } from "@/components/course/course-filters";
 import { SiteHeader } from "@/components/site-header";
+import { BookmarkButton } from "@/components/ui/bookmark-button";
 import { Card } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { Pagination } from "@/components/ui/pagination";
@@ -100,7 +101,7 @@ export default async function CoursesPage({
                         />
                       ) : null}
                     </span>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <Link
                         href={`/courses/${course.slug}`}
                         className="hover:text-primary-500"
@@ -113,6 +114,11 @@ export default async function CoursesPage({
                         {course.summary}
                       </p>
                     </div>
+                    <BookmarkButton
+                      kind="course"
+                      slug={course.slug ?? ""}
+                      className="size-9"
+                    />
                   </div>
                   <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-neutral-200 pt-4">
                     <span className="inline-flex items-center gap-1.5 text-small text-neutral-500">
