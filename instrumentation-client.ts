@@ -21,7 +21,9 @@ if (token) {
     api_host: "/ingest",
     ui_host: host,
     defaults: "2026-01-30",
-    capture_exceptions: true,
+    // Capture exceptions only on deployed hosts. During `next dev` NODE_ENV is
+    // "development", so transient local browser errors stay out of error tracking.
+    capture_exceptions: process.env.NODE_ENV === "production",
     debug: process.env.NODE_ENV === "development",
   });
 }
