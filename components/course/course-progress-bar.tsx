@@ -1,6 +1,7 @@
 import { ArrowRightIcon } from "@/components/icons";
 import { CourseResumeLink } from "@/components/course/course-resume-link";
 import { ProgressBar } from "@/components/ui/progress-bar";
+import { Container } from "@/components/ui/container";
 
 const PLACEHOLDER_PROGRESS = 35;
 
@@ -15,7 +16,7 @@ export function CourseProgressBar({
 }) {
   return (
     <div className="sticky bottom-0 border-t border-neutral-200 bg-surface shadow-lg">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <Container className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-col gap-2 sm:max-w-md">
           <p className="text-body font-medium text-neutral-900">Your Progress</p>
           <ProgressBar value={PLACEHOLDER_PROGRESS} />
@@ -30,7 +31,7 @@ export function CourseProgressBar({
           Continue Learning
           <ArrowRightIcon className="size-5" />
         </CourseResumeLink>
-      </div>
+      </Container>
     </div>
   );
 }

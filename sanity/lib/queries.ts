@@ -11,6 +11,8 @@ const courseCardProjection = /* groq */ `{
   popular,
   studentCount,
   "moduleCount": count(modules),
+  "lessonCount": count(modules[].lessons[]),
+  "lessonSlugs": modules[].lessons[]->slug.current,
   "totalDuration": math::sum(modules[].lessons[]->duration),
   "instructor": instructor->{ name, "slug": slug.current, photo },
   "category": category->{ title, "slug": slug.current },

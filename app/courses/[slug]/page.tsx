@@ -10,6 +10,7 @@ import { OutcomeGrid } from "@/components/course/outcome-grid";
 import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { Container } from "@/components/ui/container";
 import { formatCount, formatDuration } from "@/lib/format";
 import { getCourseBySlug, getCourseSlugs } from "@/sanity/lib/data";
 import { urlFor } from "@/sanity/lib/image";
@@ -81,7 +82,7 @@ export default async function CoursePage({
       <SiteHeader />
 
       <main className="flex-1">
-        <div className="mx-auto w-full max-w-6xl px-6 py-8">
+        <Container className="py-8">
           <Breadcrumbs
             items={[
               { label: "All Courses", href: "/courses" },
@@ -162,7 +163,7 @@ export default async function CoursePage({
               <ModuleList modules={moduleListItems} />
             </div>
           </div>
-        </div>
+        </Container>
       </main>
 
       <CourseProgressBar

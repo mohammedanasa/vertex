@@ -10,6 +10,7 @@ import {
 import { DecorativeBars } from "@/components/home/decorative-bars";
 import { HeroSearch } from "@/components/home/hero-search";
 import { SiteHeader } from "@/components/site-header";
+import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatDuration } from "@/lib/format";
@@ -57,7 +58,7 @@ export default async function Home() {
 
         <div className="border-t border-neutral-200" />
 
-        <section className="mx-auto max-w-6xl px-6 py-16">
+        <Container as="section" className="py-16">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <h2 className="font-display text-display-2 font-bold text-neutral-900">
               All Courses
@@ -116,7 +117,7 @@ export default async function Home() {
               </Card>
             ))}
           </div>
-        </section>
+        </Container>
 
         <section className="px-6 pb-4">
           <div className="mx-auto flex max-w-3xl items-center gap-4 text-neutral-300">
