@@ -12,6 +12,7 @@ import {
   LESSON_SEARCH_QUERY,
   LESSON_SLUGS_QUERY,
   SEARCH_HYDRATE_QUERY,
+  VIDEO_MOMENTS_QUERY,
 } from './queries'
 
 /**
@@ -180,6 +181,30 @@ export async function searchLessonsByStems(stems: string[], limit: number) {
   const { data } = await sanityFetch({
     query: LESSON_SEARCH_QUERY,
     params: { stems, limit },
+    perspective: 'drafts',
+    stega: false,
+  })
+  return data
+}
+
+/**
+ * Resolves ranked lessons to matched moments in their videos (AGENTS.md §7).
+ *
+ * `stems` are the same wildcarded tokens used for the lesson search, bound as a
+ * GROQ parameter rather than interpolated. `perVideo` bounds how much of each
+ * video's `chunks` array can come back, so a transcript is never fetched whole
+ * (§12).
+ */
+export async function getVideoMoments(
+  ids: string[],
+  stems: string[],
+  perVideo: number,
+) {
+  if (ids.length === 0 || stems.length === 0) return []
+
+  const { data } = await sanityFetch({
+    query: VIDEO_MOMENTS_QUERY,
+    params: { ids, stems, perVideo },
     perspective: 'drafts',
     stega: false,
   })

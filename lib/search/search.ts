@@ -29,7 +29,9 @@ import type { SearchResponse, SortOption } from "./types";
  *   2. The server runs a fixed GROQ query with those stems as a bound
  *      parameter, pre-ranked by which field matched.
  *   3. The model keeps and scores the candidates that genuinely answer it.
- *   4. The server re-fetches every display field for the survivors.
+ *   4. The server re-fetches every display field for the survivors, and
+ *      resolves each one to specific moments in its video — chapters first,
+ *      transcript as the fallback.
  *
  * The model never writes GROQ and never supplies display data, so a bad
  * response costs relevance and nothing else — it cannot produce a malformed
@@ -197,8 +199,10 @@ export async function runSearch(
       results: ranking.results.filter((r) => offered.has(r.lessonId)),
     };
 
-    // 4. Re-read every display field from Sanity.
-    const results = sortResults(await hydrateResults(vetted), sort);
+    // 4. Re-read every display field from Sanity, and resolve each lesson to
+    //    the matched moments in its video. The stems are reused for the moment
+    //    match so the timestamp reflects the same keywords the lesson matched.
+    const results = sortResults(await hydrateResults(vetted, stems), sort);
 
     return {
       query,

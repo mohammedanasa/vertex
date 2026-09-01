@@ -8,7 +8,15 @@ export function ResultList({ results }: { results: SearchResult[] }) {
   return (
     <ul className="flex flex-col gap-3">
       {results.map((result) => (
-        <li key={`${result.kind}:${result.lessonId}`}>
+        // A lesson can yield several video moments, so the start offset is part
+        // of the key — `kind:lessonId` alone would collide between them.
+        <li
+          key={
+            result.kind === "video"
+              ? `video:${result.lessonId}:${result.startSeconds}`
+              : `lesson:${result.lessonId}`
+          }
+        >
           {result.kind === "video" ? (
             <VideoResultCard result={result} />
           ) : (

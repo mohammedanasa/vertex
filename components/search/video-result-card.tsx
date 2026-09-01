@@ -12,10 +12,8 @@ import { CourseLine, LessonMeta } from "./result-meta";
 /**
  * A lesson's video matched at a specific moment.
  *
- * Currently dormant: producing one of these needs `video` documents with
- * chapters and transcript chunks, and neither the schema type nor the documents
- * exist yet (AGENTS.md §8/§9). The card is implemented so that landing the
- * ingestion pipeline is purely additive.
+ * The moment is resolved server-side from the lesson's `video` document —
+ * chapters first, transcript as the fallback (AGENTS.md §7).
  *
  * The action keeps the learner on the site — it links to the lesson page with a
  * start offset, which `lib/video.ts` turns into the provider's own `start`

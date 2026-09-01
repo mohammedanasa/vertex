@@ -174,3 +174,48 @@ export const LESSON_SEARCH_QUERY = defineQuery(`
     "notesHits": count($stems[pt::text(^.notes) match @]),
   } | order(titleHits desc, keyPointHits desc, notesHits desc)[0...$limit]
 `)
+
+/**
+ * Resolves the ranked lessons to specific matched moments in their videos.
+ *
+ * This is the server side of AGENTS.md §7's two-stage timestamp resolution.
+ * Both stages are fetched here and the choice between them is made in
+ * `lib/search/hydrate.ts`: chapter labels are authored and clean, so they win;
+ * the transcript is the noisier fallback used only when no chapter matches.
+ *
+ * The lesson -> video join goes through `videoUrl`, not a reference (§8), so a
+ * video ingested once serves every lesson that embeds it. `[defined(video)]`
+ * drops a lesson whose video was never ingested, and because the traversal
+ * starts from the lesson, a `video` document can never surface on its own (§7).
+ *
+ * `match` semantics are the trap here. A *parameterized* array is AND (every
+ * stem must match), so the OR is written by counting stem hits. The operand
+ * order is load-bearing and easy to reverse:
+ *
+ *     chapters[count($stems[@ match ^.label]) > 0]   // wrong: silently []
+ *     chapters[count($stems[^.label match @]) > 0]   // right
+ *
+ * Both forms parse and neither errors, so getting it backwards degrades search
+ * to lesson-only results with no signal that anything broke. Verified against
+ * the dataset: stems ["data*","fetch*","cach*"] match 15 videos on chapter
+ * label and 93 on transcript text.
+ *
+ * `$perVideo` caps the moments taken from each video so one heavily-matching
+ * video cannot crowd out the page, and so a whole `chunks` array is never
+ * pulled into memory (§12).
+ */
+export const VIDEO_MOMENTS_QUERY = defineQuery(`
+  *[_type == "lesson" && _id in $ids && defined(videoUrl)]{
+    _id,
+    "video": *[_type == "video" && url == ^.videoUrl][0]{
+      "chapterMoments": chapters[count($stems[^.label match @]) > 0][0...$perVideo]{
+        startSeconds,
+        label,
+      },
+      "chunkMoments": chunks[count($stems[^.text match @]) > 0][0...$perVideo]{
+        startSeconds,
+        text,
+      },
+    },
+  }[defined(video)]
+`)
