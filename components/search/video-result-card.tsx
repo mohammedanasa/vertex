@@ -1,11 +1,12 @@
 import Image from "next/image";
-import Link from "next/link";
 
 import { ChevronRightIcon, PlayCircleFilledIcon } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { formatTimestamp } from "@/lib/video";
 import { urlFor } from "@/sanity/lib/image";
-import type { VideoResult } from "@/lib/search/types";
+import type { SortOption, VideoResult } from "@/lib/search/types";
+
+import { SearchResultLink } from "./search-result-link";
 
 import { CourseLine, LessonMeta } from "./result-meta";
 
@@ -19,7 +20,27 @@ import { CourseLine, LessonMeta } from "./result-meta";
  * start offset, which `lib/video.ts` turns into the provider's own `start`
  * parameter. It never links out to the provider (AGENTS.md §7).
  */
-export function VideoResultCard({ result }: { result: VideoResult }) {
+export function VideoResultCard({
+  result,
+  position,
+  sort,
+}: {
+  result: VideoResult;
+  position: number;
+  sort: SortOption;
+}) {
+  // Shared by every link on the card, so the click event does not depend on
+  // which part of the card the learner hit.
+  const tracking = {
+    resultType: "video" as const,
+    position,
+    lessonSlug: result.lessonSlug,
+    courseSlug: result.courseSlug,
+    relevance: result.relevance,
+    sort,
+    startSeconds: result.startSeconds,
+  };
+
   const href = `/lessons/${result.lessonSlug}?startSeconds=${result.startSeconds}`;
   const timestamp = formatTimestamp(result.startSeconds);
 
@@ -29,8 +50,9 @@ export function VideoResultCard({ result }: { result: VideoResult }) {
 
   return (
     <article className="flex flex-col gap-4 rounded-lg border border-neutral-200 bg-surface p-4 sm:flex-row sm:gap-5">
-      <Link
+      <SearchResultLink
         href={href}
+        {...tracking}
         aria-label={`Watch ${result.lessonTitle} from ${timestamp}`}
         className="group relative block w-full shrink-0 overflow-hidden rounded-md bg-neutral-900 sm:w-64"
       >
@@ -53,7 +75,7 @@ export function VideoResultCard({ result }: { result: VideoResult }) {
             {formatTimestamp(result.clipSeconds)}
           </span>
         ) : null}
-      </Link>
+      </SearchResultLink>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-start justify-between gap-3">
@@ -66,9 +88,13 @@ export function VideoResultCard({ result }: { result: VideoResult }) {
         </div>
 
         <h3 className="mt-2 font-display text-heading-3 font-bold text-neutral-900">
-          <Link href={href} className="hover:text-primary-500">
+          <SearchResultLink
+            href={href}
+            {...tracking}
+            className="hover:text-primary-500"
+          >
             {result.lessonTitle}
-          </Link>
+          </SearchResultLink>
         </h3>
 
         {result.description ? (
@@ -77,14 +103,15 @@ export function VideoResultCard({ result }: { result: VideoResult }) {
 
         <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-3">
           <LessonMeta result={result} />
-          <Link
+          <SearchResultLink
             href={href}
+            {...tracking}
             className="inline-flex items-center gap-1.5 text-body font-medium text-primary-500 hover:text-primary-600"
           >
             <PlayCircleFilledIcon className="size-5" />
             Watch from {timestamp}
             <ChevronRightIcon className="size-4" />
-          </Link>
+          </SearchResultLink>
         </div>
       </div>
     </article>

@@ -138,6 +138,7 @@ export default async function CoursePage({
                 continueHref={firstLessonSlug ? `/lessons/${firstLessonSlug}` : "#"}
                 courseSlug={slug}
                 courseTitle={course.title ?? null}
+                continueLessonSlug={firstLessonSlug ?? null}
               />
             </div>
           </div>
@@ -166,6 +167,8 @@ export default async function CoursePage({
 
       <CourseProgressBar
         continueHref={firstLessonSlug ? `/lessons/${firstLessonSlug}` : "#"}
+        courseSlug={slug}
+        continueLessonSlug={firstLessonSlug ?? null}
       />
       <CourseViewTracker
         courseSlug={slug}

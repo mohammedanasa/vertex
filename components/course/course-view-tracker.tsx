@@ -22,6 +22,7 @@ export function CourseViewTracker({
   useEffect(() => {
     posthog.capture("course_viewed", {
       course_slug: courseSlug,
+      course_title: courseTitle,
       course_level: courseLevel,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

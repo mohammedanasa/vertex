@@ -3,6 +3,12 @@ import "server-only";
 import { Output, generateText } from "ai";
 import type { z } from "zod";
 
+import {
+  ANALYTICS_EVENTS,
+  normalizeQueryProperty,
+  type SearchRunSource,
+} from "@/lib/analytics/events";
+import { captureServerEvent } from "@/lib/posthog-server";
 import { searchLessonsByStems } from "@/sanity/lib/data";
 
 import { countCourses, hydrateResults, sortResults } from "./hydrate";
@@ -141,12 +147,62 @@ async function generateWithFailover<T>({
   throw lastError ?? new Error("No search model available");
 }
 
+/**
+ * Emits `search_performed` for a completed run, including one that matched
+ * nothing — "no results" is a successful search with a zero count, not a
+ * failure, and conflating the two hides the empty-result funnel.
+ */
+async function captureSearchPerformed({
+  query,
+  sort,
+  source,
+  results,
+  courseCount,
+  stemCount,
+  startedAt,
+}: {
+  query: string;
+  sort: SortOption;
+  source: SearchRunSource;
+  results: SearchResponse["results"];
+  courseCount: number;
+  stemCount: number;
+  startedAt: number;
+}): Promise<void> {
+  await captureServerEvent(ANALYTICS_EVENTS.SEARCH_PERFORMED, {
+    query: normalizeQueryProperty(query),
+    query_length: query.length,
+    sort,
+    source,
+    result_count: results.length,
+    course_count: courseCount,
+    video_result_count: results.filter((r) => r.kind === "video").length,
+    lesson_result_count: results.filter((r) => r.kind === "lesson").length,
+    stem_count: stemCount,
+    has_results: results.length > 0,
+    duration_ms: Date.now() - startedAt,
+  });
+}
+
+/**
+ * Analytics for the search pipeline is captured here rather than in the page,
+ * because this is where a search actually happens — the model calls, the GROQ
+ * query and the hydration. The page and the API route both funnel through it,
+ * so neither can run a search that goes uncounted.
+ *
+ * The normalized query text is sent alongside its length: what learners ask the
+ * catalog is the point of instrumenting search at all, and it is normalized so
+ * the same phrase aggregates as one value.
+ */
 export async function runSearch(
   rawQuery: string,
   sort: SortOption = "relevance",
+  source: SearchRunSource = "page",
 ): Promise<SearchResponse> {
   const query = normalizeQuery(rawQuery);
   if (!query) return emptyResponse("");
+
+  const startedAt = Date.now();
 
   const chain = buildModelChain();
   if (chain.length === 0) {
@@ -154,6 +210,16 @@ export async function runSearch(
     console.error(
       "[search] no model configured — set GROQ_API_KEY and/or OPENROUTER_API_KEY",
     );
+
+    await captureServerEvent(ANALYTICS_EVENTS.SEARCH_FAILED, {
+      query: normalizeQueryProperty(query),
+      query_length: query.length,
+      sort,
+      source,
+      reason: "unconfigured",
+      duration_ms: Date.now() - startedAt,
+    });
+
     return emptyResponse(query, "Search is not configured.");
   }
 
@@ -177,11 +243,23 @@ export async function runSearch(
     });
 
     const stems = normalizeStems(stemsOutput.stems);
-    if (stems.length === 0) return emptyResponse(query);
+    if (stems.length === 0) {
+      await captureSearchPerformed({
+        query, sort, source, results: [], courseCount: 0,
+        stemCount: 0, startedAt,
+      });
+      return emptyResponse(query);
+    }
 
     // 2. Fixed, parameterized query — the model never authors GROQ.
     const candidates = await searchLessonsByStems(stems, MAX_CANDIDATES);
-    if (candidates.length === 0) return emptyResponse(query);
+    if (candidates.length === 0) {
+      await captureSearchPerformed({
+        query, sort, source, results: [], courseCount: 0,
+        stemCount: stems.length, startedAt,
+      });
+      return emptyResponse(query);
+    }
 
     // 3. Keep and score the candidates that genuinely answer the query.
     const ranking = await generateWithFailover({
@@ -203,16 +281,32 @@ export async function runSearch(
     //    the matched moments in its video. The stems are reused for the moment
     //    match so the timestamp reflects the same keywords the lesson matched.
     const results = sortResults(await hydrateResults(vetted, stems), sort);
+    const courseCount = countCourses(results);
+
+    await captureSearchPerformed({
+      query, sort, source, results, courseCount,
+      stemCount: stems.length, startedAt,
+    });
 
     return {
       query,
       results,
       // Both counts come from hydrated data, never from the model.
       resultCount: results.length,
-      courseCount: countCourses(results),
+      courseCount,
     };
   } catch (error) {
     console.error("[search] failed", error);
+
+    await captureServerEvent(ANALYTICS_EVENTS.SEARCH_FAILED, {
+      query: normalizeQueryProperty(query),
+      query_length: query.length,
+      sort,
+      source,
+      reason: "pipeline_error",
+      duration_ms: Date.now() - startedAt,
+    });
+
     return emptyResponse(query, "Search is temporarily unavailable.");
   }
 }

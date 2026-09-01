@@ -5,6 +5,10 @@ import { useState } from "react";
 import posthog from "posthog-js";
 
 import { SearchInput } from "@/components/ui/input";
+import {
+  ANALYTICS_EVENTS,
+  normalizeQueryProperty,
+} from "@/lib/analytics/events";
 
 /**
  * The results-page search field, prefilled with the active query.
@@ -26,7 +30,11 @@ export function SearchBar({
     const query = value.trim();
     if (!query || query === initialQuery) return;
 
-    posthog.capture("course_searched", { query_length: query.length });
+    posthog.capture(ANALYTICS_EVENTS.SEARCH_SUBMITTED, {
+      query: normalizeQueryProperty(query),
+      query_length: query.length,
+      source: "results_page",
+    });
 
     const params = new URLSearchParams({ q: query });
     if (sort && sort !== "relevance") params.set("sort", sort);

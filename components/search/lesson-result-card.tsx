@@ -1,8 +1,8 @@
-import Link from "next/link";
-
 import { CheckCircleIcon, ChevronRightIcon, DocumentIcon, ExternalLinkIcon } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
-import type { LessonResult } from "@/lib/search/types";
+import type { LessonResult, SortOption } from "@/lib/search/types";
+
+import { SearchResultLink } from "./search-result-link";
 
 import { CourseLine, LessonMeta } from "./result-meta";
 
@@ -12,7 +12,26 @@ import { CourseLine, LessonMeta } from "./result-meta";
  * The left panel lists the lesson's authored key points; if a lesson has none,
  * the panel falls back to the document icon alone rather than inventing bullets.
  */
-export function LessonResultCard({ result }: { result: LessonResult }) {
+export function LessonResultCard({
+  result,
+  position,
+  sort,
+}: {
+  result: LessonResult;
+  position: number;
+  sort: SortOption;
+}) {
+  // Shared by every link on the card, so the click event does not depend on
+  // which part of the card the learner hit.
+  const tracking = {
+    resultType: "lesson" as const,
+    position,
+    lessonSlug: result.lessonSlug,
+    courseSlug: result.courseSlug,
+    relevance: result.relevance,
+    sort,
+  };
+
   const href = `/lessons/${result.lessonSlug}`;
   const points = result.keyPoints.slice(0, 3);
 
@@ -50,9 +69,13 @@ export function LessonResultCard({ result }: { result: LessonResult }) {
         </div>
 
         <h3 className="mt-2 font-display text-heading-3 font-bold text-neutral-900">
-          <Link href={href} className="hover:text-primary-500">
+          <SearchResultLink
+            href={href}
+            {...tracking}
+            className="hover:text-primary-500"
+          >
             {result.lessonTitle}
-          </Link>
+          </SearchResultLink>
         </h3>
 
         {result.description ? (
@@ -61,14 +84,15 @@ export function LessonResultCard({ result }: { result: LessonResult }) {
 
         <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-3">
           <LessonMeta result={result} />
-          <Link
+          <SearchResultLink
             href={href}
+            {...tracking}
             className="inline-flex items-center gap-1.5 text-body font-medium text-primary-500 hover:text-primary-600"
           >
             View lesson
             <ExternalLinkIcon className="size-4" />
             <ChevronRightIcon className="size-4" />
-          </Link>
+          </SearchResultLink>
         </div>
       </div>
     </article>

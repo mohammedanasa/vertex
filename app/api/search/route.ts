@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = await runSearch(query, parseSortOption(sort));
+  const result = await runSearch(query, parseSortOption(sort), "api");
 
   // An upstream failure is a 503, not a 200 with an empty list — a caller
   // should be able to tell "nothing matched" from "search is down".

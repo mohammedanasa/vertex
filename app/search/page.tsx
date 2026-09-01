@@ -34,7 +34,7 @@ export default async function SearchPage({
   const sortOption = parseSortOption(sort);
 
   const { results, resultCount, courseCount, error } = query
-    ? await runSearch(query, sortOption)
+    ? await runSearch(query, sortOption, "page")
     : { results: [], resultCount: 0, courseCount: 0, error: undefined };
 
   return (
@@ -85,9 +85,10 @@ export default async function SearchPage({
           {query && !error ? (
             <>
               <SearchViewTracker
-                queryLength={query.length}
+                query={query}
                 resultCount={resultCount}
                 courseCount={courseCount}
+                sort={sortOption}
               />
 
               {resultCount > 0 ? (
@@ -96,11 +97,11 @@ export default async function SearchPage({
                     <p className="text-body-lg font-medium text-neutral-900">
                       {resultCount} {resultCount === 1 ? "result" : "results"}
                     </p>
-                    <SearchSort query={query} sort={sortOption} />
+                    <SearchSort query={query} sort={sortOption} resultCount={resultCount} />
                   </div>
 
                   <div className="mt-4">
-                    <ResultList results={results} />
+                    <ResultList results={results} sort={sortOption} />
                   </div>
                 </>
               ) : null}
