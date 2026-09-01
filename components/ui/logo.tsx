@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 export function LogoMark({ className }: { className?: string }) {
@@ -19,13 +20,43 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-export function Logo({ className }: { className?: string }) {
-  return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
+/**
+ * The wordmark, linking home by default.
+ *
+ * `href={null}` renders it as a plain span instead. The design system gallery
+ * shows the logo as a specimen, where a navigating anchor would be wrong.
+ */
+export function Logo({
+  className,
+  href = "/",
+}: {
+  className?: string;
+  href?: string | null;
+}) {
+  const content = (
+    <>
       <LogoMark />
       <span className="text-heading-3 font-bold tracking-tight text-neutral-900">
         Vertex
       </span>
-    </span>
+    </>
+  );
+
+  const classes = cn("inline-flex items-center gap-2", className);
+
+  if (href === null) {
+    return <span className={classes}>{content}</span>;
+  }
+
+  return (
+    <Link
+      href={href}
+      // "Vertex" is already the visible text, so the label names the
+      // destination rather than repeating the brand.
+      aria-label="Vertex, home"
+      className={cn(classes, "rounded-sm hover:opacity-80")}
+    >
+      {content}
+    </Link>
   );
 }

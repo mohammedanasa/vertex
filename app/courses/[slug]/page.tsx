@@ -10,6 +10,7 @@ import { OutcomeGrid } from "@/components/course/outcome-grid";
 import { SiteHeader } from "@/components/site-header";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { BookmarkButton } from "@/components/ui/bookmark-button";
 import { Container } from "@/components/ui/container";
 import { formatCount, formatDuration } from "@/lib/format";
 import { getCourseBySlug, getCourseSlugs } from "@/sanity/lib/data";
@@ -110,9 +111,12 @@ export default async function CoursePage({
                 </Badge>
               ) : null}
 
-              <h1 className="mt-4 font-display text-display-2 font-bold text-neutral-900">
-                {course.title}
-              </h1>
+              <div className="mt-4 flex items-start justify-between gap-4">
+                <h1 className="min-w-0 font-display text-display-2 font-bold text-neutral-900">
+                  {course.title}
+                </h1>
+                <BookmarkButton kind="course" slug={slug} />
+              </div>
 
               <p className="mt-4 text-body-lg text-neutral-500">{course.summary}</p>
 

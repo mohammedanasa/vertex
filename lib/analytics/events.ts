@@ -51,6 +51,15 @@ export const ANALYTICS_EVENTS = {
 
   /** The My Learning page rendered. */
   MY_LEARNING_VIEWED: "my_learning_viewed",
+
+  /**
+   * A course or lesson was bookmarked. Presentational only (AGENTS.md §7):
+   * nothing is stored, so these events are the only record that a learner
+   * wanted to save something — which is exactly the signal worth having before
+   * building the backend for it.
+   */
+  COURSE_BOOKMARKED: "course_bookmarked",
+  LESSON_BOOKMARKED: "lesson_bookmarked",
 } as const;
 
 export type AnalyticsEvent =

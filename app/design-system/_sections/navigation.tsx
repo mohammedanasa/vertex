@@ -45,7 +45,8 @@ export function NavigationSection() {
         <div className="p-6">
           <SectionHeading number="13" title="Navigation" />
           <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-4">
-            <Logo />
+            {/* A specimen, not navigation — keep it inert. */}
+            <Logo href={null} />
             <NavLink href="/design-system" active>
               Courses
             </NavLink>

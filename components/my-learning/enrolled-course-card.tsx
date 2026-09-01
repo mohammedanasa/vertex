@@ -8,6 +8,7 @@ import {
   FolderIcon,
 } from "@/components/icons";
 import { CourseResumeLink } from "@/components/course/course-resume-link";
+import { BookmarkButton } from "@/components/ui/bookmark-button";
 import { Card } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { StatusIndicator } from "@/components/ui/status";
@@ -67,7 +68,7 @@ export function EnrolledCourseCard({
             />
           ) : null}
         </span>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <Link href={`/courses/${slug}`} className="hover:text-primary-500">
             <h3 className="font-display text-heading-3 font-bold text-neutral-900">
               {title}
@@ -75,6 +76,7 @@ export function EnrolledCourseCard({
           </Link>
           <p className="mt-1 line-clamp-2 text-body text-neutral-500">{summary}</p>
         </div>
+        <BookmarkButton kind="course" slug={slug} className="size-9" />
       </div>
 
       <div className="mt-5 flex flex-col gap-3">
