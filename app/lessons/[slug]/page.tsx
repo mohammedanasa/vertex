@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 import {
   BarChartIcon,
@@ -24,6 +25,7 @@ import {
   formatDuration,
   portableTextToPlainText,
 } from "@/lib/format";
+import { courseProgress, getProgressForUser } from "@/lib/progress";
 import { parseStartSeconds, parseYouTubeId } from "@/lib/video";
 import { getLessonBySlug, getLessonSlugs } from "@/sanity/lib/data";
 import { urlFor } from "@/sanity/lib/image";
@@ -68,8 +70,28 @@ export default async function LessonPage({
   }
 
   const course = lesson.course;
+
+  // Real progress for this learner, used by the sidebar's percentage and its
+  // per-lesson check marks. Signed out reads as 0% with nothing completed.
+  const { userId } = await auth();
+  const learner = userId ? await getProgressForUser(userId) : null;
+  const courseLessonIds = (course?.modules ?? []).flatMap((mod) =>
+    mod.lessons.map((l) => l._id),
+  );
+  const progress =
+    learner && course
+      ? courseProgress(learner, course._id, courseLessonIds)
+      : { percentComplete: 0 };
+  const completedLessonIds = learner
+    ? courseLessonIds.filter((id) => learner.completedLessons.has(id))
+    : [];
   // Search results link to a moment with `t`; `startSeconds` is the alias.
   const startSeconds = parseStartSeconds(query.t ?? query.startSeconds);
+
+  // Auto-advance sends the learner here mid-flow, so the next video starts on
+  // its own. Kept separate from `startSeconds`: that one means "seek to this
+  // moment", while this means "begin at the top, already playing".
+  const autoplay = query.autoplay === "1";
 
   // The authored URL is parsed to an id and never used as an iframe src.
   const videoId = parseYouTubeId(lesson.videoUrl);
@@ -98,6 +120,8 @@ export default async function LessonPage({
               courseImageUrl={courseImageUrl}
               modules={course.modules}
               currentModuleNumber={course.moduleNumber}
+              percentComplete={progress.percentComplete}
+              completedLessonIds={completedLessonIds}
             />
           </aside>
         ) : null}
@@ -165,10 +189,22 @@ export default async function LessonPage({
                 posterUrl={posterUrl}
                 title={lesson.title ?? "Lesson video"}
                 startSeconds={startSeconds}
+                autoplay={autoplay}
                 lessonSlug={slug}
                 courseSlug={course?.slug ?? null}
                 lessonLabel={course?.lessonLabel ?? null}
                 durationSeconds={lesson.duration ?? null}
+                lessonId={userId ? lesson._id : null}
+                courseId={userId ? (course?._id ?? null) : null}
+                nextLesson={
+                  course?.nextLesson?.slug
+                    ? {
+                        slug: course.nextLesson.slug,
+                        title: course.nextLesson.title,
+                        duration: course.nextLesson.duration,
+                      }
+                    : null
+                }
               />
             </div>
 
@@ -253,6 +289,7 @@ export default async function LessonPage({
       <LessonViewTracker
         lessonSlug={slug}
         courseSlug={course?.slug ?? null}
+        courseId={userId ? (course?._id ?? null) : null}
         lessonLabel={course?.lessonLabel ?? null}
         durationSeconds={lesson.duration ?? null}
       />

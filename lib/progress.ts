@@ -1,26 +1,22 @@
 import "server-only";
 
+import { getProgressRecord } from "@/sanity/lib/data";
+
 /**
- * Learner progress — PLACEHOLDER.
+ * Learner progress (AGENTS.md §7, §8).
  *
- * AGENTS.md §7 marks My Learning as a presentational surface that "may read
- * existing progress for display", and §8 describes the progress record that
- * will eventually hold it: a document keyed by the Clerk user id, listing the
- * lessons a learner completed and their last position in a lesson, written only
- * through a server route.
+ * Reads the learner's `progress` document — app state keyed by the Clerk user
+ * id, kept apart from the read-only catalog content the pages render. Writes go
+ * through `app/api/progress/route.ts`; nothing here mutates, and none of this
+ * reaches the browser (§5).
  *
- * That document does not exist yet. `studio/schemaTypes/index.ts` has no
- * `progress` type and there is no `app/api/progress/` route, so there is
- * nothing to read. Rather than scatter another hardcoded percentage — the
- * pattern `components/course/course-progress-bar.tsx` already fell into — every
- * caller goes through `getCourseProgress` below, and replacing this one
- * function with a real Sanity read is the whole of the later backend task.
- *
- * Server-only on purpose: progress is derived here and shipped to the browser
- * as rendered output, never as logic the client re-runs (§5).
+ * Fetch the record **once** per request with `getProgressForUser`, then derive
+ * each course's state from it with `courseProgress`. Do not call the fetch per
+ * course — My Learning renders the whole catalog and would issue one query per
+ * card.
  */
 
-/** A learner's state in one course. Shaped the way a real read would return it. */
+/** A learner's state in one course. */
 export interface CourseProgress {
   /** Lessons the learner has finished. */
   completedLessons: number;
@@ -30,74 +26,113 @@ export interface CourseProgress {
   percentComplete: number;
   /** True once every lesson is done. */
   isComplete: boolean;
-  /** False when the learner has never opened the course — it stays off My Learning. */
-  hasStarted: boolean;
+  /**
+   * True when the course belongs on My Learning: the learner enrolled and has
+   * not removed it.
+   *
+   * Enrollment is the primary signal, written by the Enroll button and by
+   * opening any lesson. The completion and last-position fallbacks below it
+   * exist so a learner whose progress predates enrollment is not dropped from
+   * the page — and so a reset course, whose completions are cleared, stays
+   * visible at 0%.
+   *
+   * Enrollment is not entitlement: it decides what shows on My Learning, never
+   * what a learner may access.
+   */
+  isEnrolled: boolean;
+}
+
+/** A learner's whole progress record, normalized so callers need no null checks. */
+export interface LearnerProgress {
+  completedLessons: ReadonlySet<string>;
+  lastPositions: ReadonlyMap<string, number>;
+  enrolledCourses: ReadonlySet<string>;
+  removedCourses: ReadonlySet<string>;
+}
+
+const EMPTY: LearnerProgress = {
+  completedLessons: new Set(),
+  lastPositions: new Map(),
+  enrolledCourses: new Set(),
+  removedCourses: new Set(),
+};
+
+/** Drops nulls from an optional string array and returns it as a set. */
+function toSet(values: readonly (string | null)[] | null | undefined) {
+  return new Set((values ?? []).filter((v): v is string => Boolean(v)));
 }
 
 /**
- * A small deterministic hash (FNV-1a).
+ * Fetches and normalizes one learner's progress. Call once per request.
  *
- * Deterministic rather than random so a learner's percentages do not reshuffle
- * between the server render and a refresh. Once real progress lands this goes
- * with the rest of the placeholder.
+ * A learner with no record yet is not an error — it is the common case on a
+ * first visit — so this returns empty state rather than null, and every caller
+ * treats "no record" and "empty record" identically.
  */
-function hash(input: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < input.length; i++) {
-    h ^= input.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  return h >>> 0;
-}
-
-/**
- * Reads one course's progress for a learner.
- *
- * PLACEHOLDER BEHAVIOUR: derives a stable pseudo-state from the user and course
- * ids. Roughly a quarter of courses come back unstarted, so My Learning has
- * something to exclude and the catalog does not simply reappear there.
- *
- * The real implementation fetches the learner's progress document, counts the
- * completed lesson ids that belong to this course, and keeps this signature.
- */
-export function getCourseProgress(
+export async function getProgressForUser(
   userId: string,
+): Promise<LearnerProgress> {
+  const record = await getProgressRecord(userId);
+  if (!record) return EMPTY;
+
+  const lastPositions = new Map<string, number>();
+  for (const entry of record.lastPositions ?? []) {
+    if (entry?.lessonId && typeof entry.seconds === "number") {
+      lastPositions.set(entry.lessonId, entry.seconds);
+    }
+  }
+
+  return {
+    completedLessons: toSet(record.completedLessons),
+    lastPositions,
+    enrolledCourses: toSet(record.enrolledCourses),
+    removedCourses: toSet(record.removedCourses),
+  };
+}
+
+/**
+ * Derives one course's state from an already-fetched record.
+ *
+ * `lessonIds` are the course's own lessons, so completion is counted against
+ * this course only — a learner's completions in other courses never inflate it.
+ */
+export function courseProgress(
+  progress: LearnerProgress,
   courseId: string,
-  totalLessons: number,
+  lessonIds: readonly string[],
 ): CourseProgress {
-  if (totalLessons <= 0) {
-    return {
-      completedLessons: 0,
-      totalLessons: 0,
-      percentComplete: 0,
-      isComplete: false,
-      hasStarted: false,
-    };
-  }
+  const totalLessons = lessonIds.length;
+  const completedLessons = lessonIds.filter((id) =>
+    progress.completedLessons.has(id),
+  ).length;
 
-  const seed = hash(`${userId}:${courseId}`);
-
-  // 0–3; a 0 means "never opened", so ~25% of courses stay off the page.
-  const bucket = seed % 4;
-  if (bucket === 0) {
-    return {
-      completedLessons: 0,
-      totalLessons,
-      percentComplete: 0,
-      isComplete: false,
-      hasStarted: false,
-    };
-  }
-
-  // Anything started has at least one lesson done, and can reach all of them.
-  const completedLessons = 1 + ((seed >>> 8) % totalLessons);
-  const percentComplete = Math.round((completedLessons / totalLessons) * 100);
+  const removed = progress.removedCourses.has(courseId);
+  const enrolled =
+    progress.enrolledCourses.has(courseId) ||
+    // Fallbacks for progress made before enrollment existed as a concept.
+    completedLessons > 0 ||
+    lessonIds.some((id) => progress.lastPositions.has(id));
 
   return {
     completedLessons,
     totalLessons,
-    percentComplete,
-    isComplete: completedLessons >= totalLessons,
-    hasStarted: true,
+    percentComplete:
+      totalLessons > 0
+        ? Math.round((completedLessons / totalLessons) * 100)
+        : 0,
+    isComplete: totalLessons > 0 && completedLessons >= totalLessons,
+    isEnrolled: enrolled && !removed,
   };
+}
+
+/**
+ * Convenience for a single course — the course and lesson pages need one
+ * course's state and have no reason to hold the whole record.
+ */
+export async function getCourseProgress(
+  userId: string,
+  courseId: string,
+  lessonIds: readonly string[],
+): Promise<CourseProgress> {
+  return courseProgress(await getProgressForUser(userId), courseId, lessonIds);
 }

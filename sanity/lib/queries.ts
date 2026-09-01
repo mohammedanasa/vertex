@@ -13,6 +13,7 @@ const courseCardProjection = /* groq */ `{
   "moduleCount": count(modules),
   "lessonCount": count(modules[].lessons[]),
   "lessonSlugs": modules[].lessons[]->slug.current,
+  "lessonIds": modules[].lessons[]->_id,
   "totalDuration": math::sum(modules[].lessons[]->duration),
   "instructor": instructor->{ name, "slug": slug.current, photo },
   "category": category->{ title, "slug": slug.current },
@@ -220,4 +221,34 @@ export const VIDEO_MOMENTS_QUERY = defineQuery(`
       },
     },
   }[defined(video)]
+`)
+
+/**
+ * A learner's progress record, looked up by their Clerk user id.
+ *
+ * `order(_createdAt asc)[0]` rather than a bare `[0]`: the schema enforces one
+ * document per user, but if a duplicate ever slipped in, an unordered `[0]`
+ * would return an arbitrary one and a learner's progress would appear to flip
+ * between reads. Oldest-wins is at least stable.
+ */
+export const PROGRESS_BY_USER_QUERY = defineQuery(`
+  *[_type == "progress" && userId == $userId] | order(_createdAt asc)[0]{
+    _id,
+    _rev,
+    userId,
+    completedLessons,
+    lastPositions[]{ lessonId, seconds },
+    enrolledCourses,
+    removedCourses,
+  }
+`)
+
+/**
+ * The lesson ids belonging to one course. Used by the reset action to scope a
+ * wipe to that course — the client never supplies the lesson list.
+ */
+export const COURSE_LESSON_IDS_QUERY = defineQuery(`
+  *[_type == "course" && _id == $courseId][0]{
+    "lessonIds": modules[].lessons[]->_id,
+  }
 `)

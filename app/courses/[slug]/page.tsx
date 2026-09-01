@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { auth } from "@clerk/nextjs/server";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { BarChartIcon, ClockIcon, FolderIcon, UsersIcon } from "@/components/icons";
@@ -13,6 +14,7 @@ import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { BookmarkButton } from "@/components/ui/bookmark-button";
 import { Container } from "@/components/ui/container";
 import { formatCount, formatDuration } from "@/lib/format";
+import { courseProgress, getProgressForUser } from "@/lib/progress";
 import { getCourseBySlug, getCourseSlugs } from "@/sanity/lib/data";
 import { urlFor } from "@/sanity/lib/image";
 
@@ -44,7 +46,7 @@ export default async function CoursePage({
   params,
 }: PageProps<"/courses/[slug]">) {
   const { slug } = await params;
-  const course = await getCourseBySlug(slug);
+  const [course, { userId }] = await Promise.all([getCourseBySlug(slug), auth()]);
 
   if (!course) {
     notFound();
@@ -57,6 +59,29 @@ export default async function CoursePage({
   const totalDuration = moduleDurations.reduce((sum, d) => sum + d, 0);
   const firstLessonSlug = modules.find((mod) => (mod.lessons?.length ?? 0) > 0)
     ?.lessons?.[0]?.slug;
+
+  // Real progress for this learner. A signed-out visitor sees 0% — the sticky
+  // bar still renders, because the course page stays public (AGENTS.md §7).
+  const flatLessons = modules.flatMap((mod) =>
+    (mod.lessons ?? []).flatMap((lesson) => (lesson ? [lesson] : [])),
+  );
+  const learner = userId ? await getProgressForUser(userId) : null;
+  const progress = learner
+    ? courseProgress(
+        learner,
+        course._id,
+        flatLessons.map((lesson) => lesson._id),
+      )
+    : { percentComplete: 0, isComplete: false, isEnrolled: false };
+
+  // Resume at the first unfinished lesson, falling back to the first lesson.
+  const resumeSlug =
+    (learner
+      ? flatLessons.find((lesson) => !learner.completedLessons.has(lesson._id))
+          ?.slug
+      : null) ??
+    firstLessonSlug ??
+    null;
 
   const moduleListItems = modules.map((mod, index) => ({
     _key: mod._key,
@@ -140,10 +165,14 @@ export default async function CoursePage({
               </div>
 
               <CourseCTAButtons
-                continueHref={firstLessonSlug ? `/lessons/${firstLessonSlug}` : "#"}
+                continueHref={resumeSlug ? `/lessons/${resumeSlug}` : "#"}
+                courseId={course._id}
                 courseSlug={slug}
                 courseTitle={course.title ?? null}
-                continueLessonSlug={firstLessonSlug ?? null}
+                continueLessonSlug={resumeSlug ?? null}
+                isEnrolled={progress.isEnrolled}
+                isComplete={progress.isComplete}
+                isSignedIn={Boolean(userId)}
               />
             </div>
           </div>
@@ -171,9 +200,11 @@ export default async function CoursePage({
       </main>
 
       <CourseProgressBar
-        continueHref={firstLessonSlug ? `/lessons/${firstLessonSlug}` : "#"}
+        continueHref={resumeSlug ? `/lessons/${resumeSlug}` : "#"}
         courseSlug={slug}
-        continueLessonSlug={firstLessonSlug ?? null}
+        continueLessonSlug={resumeSlug ?? null}
+        percentComplete={progress.percentComplete}
+        isComplete={progress.isComplete}
       />
       <CourseViewTracker
         courseSlug={slug}

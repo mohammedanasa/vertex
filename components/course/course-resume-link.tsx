@@ -9,10 +9,10 @@ import { ANALYTICS_EVENTS, type ResumeSource } from "@/lib/analytics/events";
 /**
  * A "pick this course back up" link that reports the resume.
  *
- * Resume intent, not resume state: there is no progress backend yet
- * (AGENTS.md §7), so the destination is the course's first lesson rather than a
- * stored position. The event says which affordance was used, so once real
- * progress exists the same funnel keeps working.
+ * The caller resolves the destination from stored progress — the first lesson
+ * the learner has not completed — so this resumes at a real position rather
+ * than always at the top. It still resumes to a *lesson*, not to a timestamp
+ * within one; `lastPositions` is recorded but nothing seeks to it yet.
  *
  * Only this handler ships to the browser; the surrounding component stays a
  * server component.
