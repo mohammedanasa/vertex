@@ -48,6 +48,9 @@ export const ANALYTICS_EVENTS = {
 
   /** A learner picked a course or lesson back up. */
   RESUME_USED: "resume_used",
+
+  /** The My Learning page rendered. */
+  MY_LEARNING_VIEWED: "my_learning_viewed",
 } as const;
 
 export type AnalyticsEvent =
@@ -64,7 +67,8 @@ export type ResumeSource =
   | "course_cta"
   | "course_progress_bar"
   | "search_video_result"
-  | "lesson_nav";
+  | "lesson_nav"
+  | "my_learning_card";
 
 /**
  * Watch-depth milestones, in percent of the lesson's authored duration.
