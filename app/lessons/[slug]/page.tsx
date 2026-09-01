@@ -166,6 +166,8 @@ export default async function LessonPage({
                 startSeconds={startSeconds}
                 lessonSlug={slug}
                 courseSlug={course?.slug ?? null}
+                lessonLabel={course?.lessonLabel ?? null}
+                durationSeconds={lesson.duration ?? null}
               />
             </div>
 
@@ -241,6 +243,8 @@ export default async function LessonPage({
           <LessonNav
             previous={course?.previousLesson ?? null}
             next={course?.nextLesson ?? null}
+            currentLessonSlug={slug}
+            courseSlug={course?.slug ?? null}
           />
         </main>
       </div>

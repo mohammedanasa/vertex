@@ -1,6 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
+
+import {
+  ANALYTICS_EVENTS,
+  normalizeQueryProperty,
+} from "@/lib/analytics/events";
 
 import { ChevronDownIcon } from "@/components/icons";
 
@@ -13,9 +19,11 @@ import { SORT_LABELS, SORT_OPTIONS, type SortOption } from "@/lib/search/types";
 export function SearchSort({
   query,
   sort,
+  resultCount,
 }: {
   query: string;
   sort: SortOption;
+  resultCount: number;
 }) {
   const router = useRouter();
 
@@ -26,6 +34,16 @@ export function SearchSort({
         <select
           value={sort}
           onChange={(event) => {
+            // Whether the default relevance sort is trusted is a real question
+            // about search quality, so the change is captured with both ends.
+            posthog.capture(ANALYTICS_EVENTS.SEARCH_SORT_CHANGED, {
+              from_sort: sort,
+              to_sort: event.target.value,
+              result_count: resultCount,
+              query: normalizeQueryProperty(query),
+              query_length: query.length,
+            });
+
             const params = new URLSearchParams({ q: query });
             if (event.target.value !== "relevance") {
               params.set("sort", event.target.value);

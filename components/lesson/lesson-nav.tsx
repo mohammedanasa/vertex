@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ArrowRightIcon, ChevronLeftIcon } from "@/components/icons";
+import { LessonNavLink } from "@/components/lesson/lesson-nav-link";
 import { formatDuration } from "@/lib/format";
 
 export interface NavLesson {
@@ -15,23 +15,31 @@ export interface NavLesson {
 export function LessonNav({
   previous,
   next,
+  currentLessonSlug,
+  courseSlug,
 }: {
   previous: NavLesson | null;
   next: NavLesson | null;
+  currentLessonSlug: string;
+  courseSlug: string | null;
 }) {
   return (
     <div className="sticky bottom-0 border-t border-neutral-200 bg-surface shadow-lg">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-6 py-4">
         <div className="flex min-w-0 items-center gap-4">
           {previous?.slug ? (
-            <Link
+            <LessonNavLink
               href={`/lessons/${previous.slug}`}
+              direction="previous"
+              fromLessonSlug={currentLessonSlug}
+              toLessonSlug={previous.slug}
+              courseSlug={courseSlug}
               className="inline-flex h-11 shrink-0 items-center gap-2 rounded-md border border-neutral-200 bg-surface px-4 text-body-lg font-medium text-neutral-900 hover:shadow-md"
             >
               <ChevronLeftIcon className="size-5" />
               <span className="hidden sm:inline">Previous Lesson</span>
               <span className="sm:hidden">Previous</span>
-            </Link>
+            </LessonNavLink>
           ) : (
             <span
               aria-disabled="true"
@@ -66,14 +74,18 @@ export function LessonNav({
           ) : null}
 
           {next?.slug ? (
-            <Link
+            <LessonNavLink
               href={`/lessons/${next.slug}`}
+              direction="next"
+              fromLessonSlug={currentLessonSlug}
+              toLessonSlug={next.slug}
+              courseSlug={courseSlug}
               className="inline-flex h-11 shrink-0 items-center gap-2 rounded-md bg-primary-500 px-4 text-body-lg font-medium text-white shadow-sm hover:bg-primary-600"
             >
               <span className="hidden sm:inline">Next Lesson</span>
               <span className="sm:hidden">Next</span>
               <ArrowRightIcon className="size-5" />
-            </Link>
+            </LessonNavLink>
           ) : (
             <span
               aria-disabled="true"
